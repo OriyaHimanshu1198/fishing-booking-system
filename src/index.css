@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Print Styles */
+@media print {
+  /* Hide elements that shouldn't print */
+  header,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print\:block {
+    display: block !important;
+  }
+
+  /* Remove ALL margins and padding from body */
+  body {
+    background: white;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Remove margins from main container */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Remove all spacing between sections */
+  .space-y-6 > *,
+  .space-y-2 > * {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Compact padding for print header */
+  .print\:p-3 {
+    padding: 8px !important;
+  }
+
+  .print\:mb-2 {
+    margin-bottom: 4px !important;
+  }
+
+  /* Force everything to fit on one page */
+  * {
+    page-break-inside: avoid !important;
+  }
+
+  /* Ensure table fits on one page */
+  table {
+    border-collapse: collapse !important;
+    width: 100%;
+    font-size: 10px !important;
+  }
+
+  th, td {
+    padding: 6px 4px !important;
+  }
+
+  /* Preserve all colors for print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Maintain background colors */
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-blue-50,
+  .bg-blue-100,
+  .bg-green-50,
+  .bg-green-100,
+  .bg-green-200,
+  .bg-red-50,
+  .bg-amber-50 {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Keep gradients */
+  .bg-gradient-to-r {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Keep rounded corners minimal */
+  .rounded-lg,
+  .print\:rounded-none {
+    border-radius: 0 !important;
+  }
+
+  /* Remove shadows */
+  .shadow-md,
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  /* Page settings for minimal margins */
+  @page {
+    margin: 0.3cm;
+    size: landscape;
+  }
+
+  /* Compact header sizes */
+  h1 {
+    font-size: 16px !important;
+    margin: 4px 0 !important;
+  }
+
+  h2 {
+    font-size: 14px !important;
+    margin: 0 !important;
+  }
+
+  p {
+    margin: 2px 0 !important;
+  }
+
+  /* Make text slightly smaller but readable */
+  .text-sm {
+    font-size: 10px !important;
+  }
+
+  .text-xs {
+    font-size: 8px !important;
+  }
+
+  .text-base {
+    font-size: 11px !important;
+  }
+
+  .text-lg {
+    font-size: 13px !important;
+  }
+
+  .text-xl {
+    font-size: 15px !important;
+  }
+
+  /* Keep badges visible */
+  .rounded,
+  .rounded-full {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Remove container padding */
+  .max-w-7xl {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Compact border in print header */
+  .border-t-2 {
+    margin-top: 4px !important;
+  }
+}
