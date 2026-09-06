@@ -1518,28 +1518,129 @@ body {
 }
 
 @media (max-width: 768px) {
+  .neu-header { padding: 16px; }
   .neu-header-inner { flex-direction: column; gap: 16px; align-items: flex-start; }
-  .neu-header-actions { width: 100%; flex-wrap: wrap; }
-  .neu-nav-bar { width: 100%; overflow-x: auto; }
+  .neu-header-title { font-size: 1.5rem; }
+  .neu-header-actions { width: 100%; flex-wrap: wrap; gap: 8px; }
+  .neu-header-actions .neu-btn { padding: 10px 16px; font-size: 0.8rem; }
+  .neu-nav { padding: 0 16px; }
+  .neu-nav-bar { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .neu-nav-bar::-webkit-scrollbar { display: none; }
+  .neu-nav-tab { padding: 10px 16px; font-size: 0.8rem; white-space: nowrap; }
   .neu-main { padding: 16px 16px 40px; }
-  .kpi-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
-  .kpi-card { padding: 20px 16px; }
-  .kpi-number { font-size: 2rem; }
-  .beat-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .kpi-card { padding: 16px 12px; }
+  .kpi-number { font-size: 1.8rem; }
+  .kpi-label { font-size: 0.75rem; }
+  .beat-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .beat-card { padding: 12px 8px; min-height: 80px; }
+  .beat-name { font-size: 0.85rem; }
   .season-grid { grid-template-columns: 1fr; }
   .config-pills { flex-direction: column; }
   .config-pill { min-width: auto; }
   .day-grid { grid-template-columns: repeat(3, 1fr); }
   .neu-radio-group { flex-direction: column; }
-  .neu-form-card { padding: 24px 18px; }
+  .neu-form-card { padding: 20px 16px; }
   .neu-table-wrapper { overflow-x: auto; }
   .neu-schedule-table { min-width: 600px; }
+  .neu-modal-content { width: 95%; max-width: 95%; margin: 16px auto; }
+  .neu-modal-body { padding: 20px 16px; }
+  .neu-form-input { padding: 14px 16px; font-size: 16px; } /* Prevents zoom on iOS */
+  .neu-btn { min-height: 44px; } /* Better touch targets */
+  .neu-table { font-size: 0.85rem; }
+  .neu-table th, .neu-table td { padding: 12px 10px; }
+  .neu-search-input { padding: 14px 16px 14px 44px; font-size: 16px; }
+  .neu-table-header { padding: 16px; }
+  .neu-table-footer { padding: 12px 16px; flex-direction: column; gap: 8px; text-align: center; }
 }
 
 @media (max-width: 480px) {
-  .kpi-grid { grid-template-columns: 1fr; }
-  .beat-grid { grid-template-columns: repeat(2, 1fr); }
+  .neu-header { padding: 12px; }
+  .neu-header-title { font-size: 1.3rem; }
+  .neu-header-subtitle { font-size: 0.75rem; }
+  .neu-main { padding: 12px 12px 40px; }
+  .kpi-grid { grid-template-columns: 1fr; gap: 12px; }
+  .beat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .day-grid { grid-template-columns: repeat(2, 1fr); }
+  .neu-form-card { padding: 16px 14px; }
+  .neu-modal-content { width: 100%; max-width: 100%; margin: 8px; border-radius: 16px; }
+  .neu-modal-body { padding: 16px 14px; }
+  .neu-btn { padding: 12px 20px; font-size: 0.85rem; min-height: 48px; }
+  .neu-table { font-size: 0.8rem; }
+  .neu-table th, .neu-table td { padding: 10px 8px; }
+  .neu-pagination { flex-direction: column; gap: 8px; }
+  .neu-page-btn { width: 100%; }
+  .neu-page-info { text-align: center; }
+  .neu-search-bar { margin: 0; }
+  .neu-section { padding: 16px; }
+  .badge { font-size: 0.7rem; padding: 4px 8px; }
+  .dark-toggle { width: 36px; height: 36px; font-size: 1rem; }
+}
+
+/* ==========================================
+   MOBILE TOUCH IMPROVEMENTS
+   ========================================== */
+
+@media (hover: none) and (pointer: coarse) {
+  .neu-btn { min-height: 44px; }
+  .neu-btn:active { transform: scale(0.98); }
+  .neu-nav-tab:active { transform: scale(0.97); }
+  .dark-toggle:active { transform: scale(0.95); }
+  .neu-table tr:active { background: var(--bg-secondary); }
+  .neu-beat-card:active { transform: scale(0.98); }
+  .neu-booking-card:active { transform: scale(0.98); }
+}
+
+/* Better mobile scrolling */
+@supports (-webkit-overflow-scrolling: touch) {
+  .neu-nav-bar { -webkit-overflow-scrolling: touch; }
+  .neu-table-wrapper { -webkit-overflow-scrolling: touch; }
+}
+
+/* Mobile-optimized form layouts */
+@media (max-width: 768px) {
+  .neu-form-row { flex-direction: column; gap: 16px; }
+  .neu-form-group { width: 100%; }
+  .neu-form-actions { flex-direction: column; gap: 12px; }
+  .neu-form-actions .neu-btn { width: 100%; }
+  .neu-form-card { padding: 16px; }
+  .neu-form-group label { margin-bottom: 8px; }
+}
+
+/* Mobile-optimized session cards */
+@media (max-width: 768px) {
+  .session-card-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .session-card-actions { width: 100%; flex-wrap: wrap; gap: 8px; }
+  .session-card-actions .neu-btn { flex: 1; min-width: 80px; }
+  .session-card-meta { flex-wrap: wrap; gap: 8px; }
+  .session-card-meta .config-pill { flex: 1; min-width: 100px; }
+}
+
+/* Mobile-optimized booking form */
+@media (max-width: 768px) {
+  .booking-form-section { padding: 16px; }
+  .booking-form-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .booking-form-progress { margin-bottom: 16px; }
+  .booking-form-actions { position: fixed; bottom: 0; left: 0; right: 0; padding: 16px; background: var(--bg-primary); border-top: 1px solid var(--shadow-dark); z-index: 100; }
+  .booking-form-actions .neu-btn { width: 100%; }
+}
+
+/* Mobile-optimized dashboard */
+@media (max-width: 768px) {
+  .dashboard-stats { grid-template-columns: 1fr; }
+  .dashboard-charts { flex-direction: column; }
+  .dashboard-chart { width: 100%; }
+  .recent-bookings-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .recent-bookings-header .neu-btn { width: 100%; }
+}
+
+/* Mobile-optimized weekly view */
+@media (max-width: 768px) {
+  .weekly-view-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .weekly-view-controls { width: 100%; flex-wrap: wrap; gap: 8px; }
+  .weekly-view-controls .neu-btn { flex: 1; min-width: 80px; }
+  .weekly-view-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .weekly-view-table table { min-width: 700px; }
 }
 
 /* ==========================================
