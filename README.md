@@ -60,6 +60,11 @@ A comprehensive booking management system for fishing beats and loch, built with
 - **Loading States**: Button spinners during form submissions
 - **Pagination**: Navigate through large booking lists
 
+### 📧 Email Service
+- Integrated email service for sending booking confirmations and notifications
+- Configured via environment variables
+- Located in `src/utils/emailService.js`
+
 ## 📁 Project Structure
 
 ```
@@ -75,12 +80,21 @@ src/
 │   ├── ViewBookings.jsx     # All bookings with search/filter/sort/pagination
 │   └── WeeklyView.jsx       # 6-day weekly grid view
 ├── utils/
-│   └── dateHelpers.js       # Date calculations and beat allocation logic
+│   ├── dateHelpers.js       # Date calculations and beat allocation logic
+│   └── emailService.js      # Email service for booking notifications
 ├── App.jsx                  # Main application (routing, state, dark mode)
 ├── App.css                  # Neumorphic design system + animations
 ├── index.css                # Tailwind base styles
 ├── main.jsx                 # Application entry point
 └── supabase.js              # Supabase client and API helpers
+├── .netlify/
+│   ├── netlify.toml         # Netlify build configuration and redirects
+│   └── state.json           # Netlify deployment state
+├── database/
+│   └── fix-rls.sql          # SQL script to fix Row Level Security policies
+├── project-analysis.html    # Analysis of booking distribution patterns
+├── PROJECT_SAVED.md         # Project save point documentation
+└── PROJECT_STATUS.md        # Current project status and TODO items
 ```
 
 ## 🛠️ Tech Stack
@@ -197,6 +211,15 @@ Toggle between light and dark themes. Preference is saved to `localStorage`.
 2. Import project in Netlify/Vercel
 3. Set environment variables
 4. Deploy
+
+### Netlify Deployment
+- Netlify configuration files are in the `.netlify/` directory
+- `netlify.toml` contains build and redirect settings
+- For SPA routing, Netlify is configured to serve `index.html` for all routes
+- Environment variables should be set in Netlify dashboard:
+  - VITE_SUPABASE_URL
+  - VITE_SUPABASE_KEY
+  - EMAIL_SERVICE_CONFIG (if applicable)
 
 ### Manual
 ```bash
