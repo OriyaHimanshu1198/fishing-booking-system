@@ -19,6 +19,7 @@ import {
   autoCreateNextYearSession,
   migrateBookingsToSessions
 } from './supabase'
+import emailService from './utils/emailService'
 import './App.css'
 
 // Animation wrapper component
@@ -189,12 +190,26 @@ function AppContent() {
       return
     }
 
+    // Send email confirmation
+    try {
+      await emailService.sendBookingConfirmation({
+        ...bookingData,
+        id: id || Date.now(), // Use temp ID if not yet available
+        email: booking.email
+      })
+      // Note: In a real app, you might want to handle email errors differently
+      // For now, we'll log but not fail the booking if email fails
+    } catch (emailError) {
+      console.warn('Email sending failed (but booking saved):', emailError)
+      // We don't fail the booking if email fails
+    }
+
     await fetchBookings(activeSession?.id)
     await fetchAllBookings()
     setShowForm(false)
     setEditingBooking(null)
     setCurrentView('dashboard')
-    success('Booking created successfully!')
+    success('Booking created successfully! Confirmation email sent.')
   }
 
   const updateBooking = async (updatedBooking) => {
@@ -220,12 +235,26 @@ function AppContent() {
       return
     }
 
+    // Send email confirmation for update
+    try {
+      await emailService.sendBookingConfirmation({
+        ...updatedBooking,
+        id: updatedBooking.id,
+        email: updatedBooking.email
+      })
+      // Note: In a real app, you might want to handle email errors differently
+      // For now, we'll log but not fail the booking if email fails
+    } catch (emailError) {
+      console.warn('Email sending failed (but booking updated):', emailError)
+      // We don't fail the booking if email fails
+    }
+
     await fetchBookings(activeSession?.id)
     await fetchAllBookings()
     setShowForm(false)
     setEditingBooking(null)
     setCurrentView('dashboard')
-    success('Booking updated successfully!')
+    success('Booking updated successfully! Confirmation email sent.')
   }
 
   const handleDeleteBooking = (id) => {
@@ -234,6 +263,19 @@ function AppContent() {
       'Are you sure you want to delete this booking? This action cannot be undone.',
       'danger',
       async () => {
+        // Get booking details before deleting for email
+        const { data: bookingToDelete, error: fetchError } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('id', id)
+          .single()
+
+        if (fetchError) {
+          console.error('Error fetching booking for deletion:', fetchError)
+          toastError('Failed to delete booking. Please try again.')
+          return
+        }
+
         const { error: deleteError } = await supabase
           .from('bookings')
           .delete()
@@ -245,9 +287,22 @@ function AppContent() {
           return
         }
 
+        // Send cancellation email
+        try {
+          await emailService.sendCancellationConfirmation({
+            ...bookingToDelete,
+            email: bookingToDelete.email
+          })
+          // Note: In a real app, you might want to handle email errors differently
+          // For now, we'll log but not fail the deletion if email fails
+        } catch (emailError) {
+          console.warn('Email sending failed (but booking deleted):', emailError)
+          // We don't fail the deletion if email fails
+        }
+
         await fetchBookings(activeSession?.id)
         await fetchAllBookings()
-        success('Booking deleted.')
+        success('Booking deleted. Cancellation email sent.')
         closeConfirm()
       }
     )

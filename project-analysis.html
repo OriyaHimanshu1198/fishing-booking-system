@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fishing Booking System - Project Analysis</title>
+
+<style>
+:root {
+  --bg-base: #f8fafb;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f1f5f7;
+  --text-primary: #1a2332;
+  --text-secondary: #4e5d78;
+  --text-tertiary: #8391a8;
+  --border: #e1e8ed;
+  --accent: #2d8f85;
+  --accent-soft: #e6f4f2;
+  --warning: #d97706;
+  --warning-soft: #fef3e7;
+  --critical: #dc2626;
+  --critical-soft: #fee;
+  --success: #059669;
+  --success-soft: #e7f9f3;
+  --info: #2563eb;
+  --info-soft: #eff6ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-base: #0f1419;
+    --bg-surface: #1a1f2e;
+    --bg-elevated: #242b3d;
+    --text-primary: #e8ecf1;
+    --text-secondary: #a8b3c1;
+    --text-tertiary: #6b7689;
+    --border: #2d3544;
+    --accent: #3fb8a7;
+    --accent-soft: #1a3431;
+    --warning: #f59e0b;
+    --warning-soft: #2a1f0f;
+    --critical: #f87171;
+    --critical-soft: #2d1616;
+    --success: #10b981;
+    --success-soft: #0f2620;
+    --info: #60a5fa;
+    --info-soft: #172340;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg-base: #0f1419;
+  --bg-surface: #1a1f2e;
+  --bg-elevated: #242b3d;
+  --text-primary: #e8ecf1;
+  --text-secondary: #a8b3c1;
+  --text-tertiary: #6b7689;
+  --border: #2d3544;
+  --accent: #3fb8a7;
+  --accent-soft: #1a3431;
+  --warning: #f59e0b;
+  --warning-soft: #2a1f0f;
+  --critical: #f87171;
+  --critical-soft: #2d1616;
+  --success: #10b981;
+  --success-soft: #0f2620;
+  --info: #60a5fa;
+  --info-soft: #172340;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  line-height: 1.6;
+  padding: 24px 16px;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+header {
+  margin-bottom: 32px;
+}
+
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.stat-label {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-desc {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+  overflow-x: auto;
+}
+
+.tab {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge.critical {
+  background: var(--critical-soft);
+  color: var(--critical);
+}
+
+.badge.warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.badge.info {
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+.badge.success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.issue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.issue-item {
+  border-left: 3px solid var(--border);
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+}
+
+.issue-item.critical {
+  border-left-color: var(--critical);
+}
+
+.issue-item.warning {
+  border-left-color: var(--warning);
+}
+
+.issue-item.info {
+  border-left-color: var(--info);
+}
+
+.issue-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.issue-desc {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.issue-action {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.feature-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--bg-elevated);
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.checkbox.checked {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.checkbox.checked::after {
+  content: '✓';
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.feature-content {
+  flex: 1;
+}
+
+.feature-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.feature-desc {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.code-block {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 13px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+  border-left: 3px solid;
+}
+
+.alert.success {
+  background: var(--success-soft);
+  border-left-color: var(--success);
+}
+
+.alert.info {
+  background: var(--info-soft);
+  border-left-color: var(--info);
+}
+
+.alert strong {
+  font-weight: 600;
+}
+
+.files-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.file-card {
+  padding: 16px;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+}
+
+.file-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.file-desc {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 32px 0;
+}
+
+@media (max-width: 640px) {
+  h1 {
+    font-size: 24px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-value {
+    font-size: 28px;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>🎣 Fishing Booking System Analysis</h1>
+    <p class="subtitle">Comprehensive gap analysis and missing features report</p>
+  </header>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Critical Issues</div>
+      <div class="stat-value" style="color: var(--critical)">2</div>
+      <div class="stat-desc">Blocking functionality</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Missing Features</div>
+      <div class="stat-value" style="color: var(--warning)">8</div>
+      <div class="stat-desc">From roadmap</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Completed</div>
+      <div class="stat-value" style="color: var(--success)">9</div>
+      <div class="stat-desc">Core features done</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Progress</div>
+      <div class="stat-value" style="color: var(--accent)">53%</div>
+      <div class="stat-desc">Overall completion</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="critical">Critical Issues</button>
+    <button class="tab" data-tab="missing">Missing Features</button>
+    <button class="tab" data-tab="completed">What's Done</button>
+    <button class="tab" data-tab="fixes">How to Fix</button>
+  </div>
+
+  <div class="tab-content active" id="critical">
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">🚨 Critical Issues</h2>
+        <span class="badge critical">Blocking</span>
+      </div>
+      <div class="issue-list">
+        <div class="issue-item critical">
+          <div class="issue-title">
+            <span>🔒 Supabase RLS Authentication Error</span>
+          </div>
+          <div class="issue-desc">
+            <strong>Error:</strong> <code>{"message":"authentication not found in headers","code":"unauthorized"}</code>
+            <br><br>
+            <strong>Root Cause:</strong> Your Supabase tables have Row Level Security (RLS) enabled, but the app uses anonymous access without authentication. This blocks all database queries.
+          </div>
+          <div class="issue-action">→ Action Required: Disable RLS in Supabase dashboard</div>
+        </div>
+
+        <div class="issue-item critical">
+          <div class="issue-title">
+            <span>📧 Brevo Email Service - IP Authorization</span>
+          </div>
+          <div class="issue-desc">
+            <strong>Error:</strong> <code>status: 401 - IP address 51.179.191.102 not authorized</code>
+            <br><br>
+            <strong>Root Cause:</strong> Brevo requires IP whitelisting for API access. Your current IP is not in the authorized list.
+            <br><br>
+            <strong>Current Status:</strong> Temporarily disabled (using mock mode)
+          </div>
+          <div class="issue-action">→ Action Required: Authorize IP in Brevo security settings</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="missing">
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">🎯 High Priority Missing Features</h2>
+        <span class="badge warning">8 Features</span>
+      </div>
+      <div class="feature-grid">
+        <div class="feature-item">
+          <div class="checkbox"></div>
+          <div class="feature-content">
+            <div class="feature-title">1. Guest Self-Service Booking Page</div>
+            <div class="feature-desc">Public-facing interface where customers can book without admin access. Currently admin-only system.</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox"></div>
+          <div class="feature-content">
+            <div class="feature-title">2. Email Notifications (Production)</div>
+            <div class="feature-desc">Code exists but not working due to Brevo IP issue. Confirmations, cancellations, and reminders not being sent.</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox"></div>
+          <div class="feature-content">
+            <div class="feature-title">3. PDF Booking Confirmations</div>
+            <div class="feature-desc">Generate downloadable PDF confirmations for bookings. Currently only HTML email templates exist.</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox"></div>
+          <div class="feature-content">
+            <div class="feature-title">4. Beat Availability Heatmap</div>
+            <div class="feature-desc">Visual calendar showing at-a-glance availability across weeks and beats. Helps customers see open slots quickly.</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox"></div>
+          <div class="feature-content">
+            <div class="feature-title">5. Waitlist System</div>
+            <div class="feature-desc">Allow customers to join a queue when beats are fully booked. Notify them when slots open up.</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox"></div>
+          <div class="feature-content">
+            <div class="feature-title">6. Mobile PWA Support</div>
+            <div class="feature-desc">Progressive Web App features: offline capability, install prompt, home screen icon. Better mobile experience.</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox"></div>
+          <div class="feature-content">
+            <div class="feature-title">7. Role-Based Access Control</div>
+            <div class="feature-desc">Different permission levels (viewer, editor, admin). Currently single admin account only.</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox"></div>
+          <div class="feature-content">
+            <div class="feature-title">8. Multi-Year Analytics</div>
+            <div class="feature-desc">Year-over-year comparisons, trend analysis, booking patterns across multiple seasons.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="completed">
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">✅ Completed Features</h2>
+        <span class="badge success">Well Done!</span>
+      </div>
+      <div class="feature-grid">
+        <div class="feature-item">
+          <div class="checkbox checked"></div>
+          <div class="feature-content">
+            <div class="feature-title">Admin Authentication System</div>
+            <div class="feature-desc">Secure login with session management</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox checked"></div>
+          <div class="feature-content">
+            <div class="feature-title">Session/Season Management</div>
+            <div class="feature-desc">Multi-year booking support with active/upcoming/completed states</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox checked"></div>
+          <div class="feature-content">
+            <div class="feature-title">Smart Booking System</div>
+            <div class="feature-desc">Consecutive and flexible booking types with auto-allocation</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox checked"></div>
+          <div class="feature-content">
+            <div class="feature-title">Dashboard with Real-Time Stats</div>
+            <div class="feature-desc">Bookings, availability, beat usage, recent activity</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox checked"></div>
+          <div class="feature-content">
+            <div class="feature-title">Advanced Search & Filtering</div>
+            <div class="feature-desc">Search by name/email/phone, filter by week/beat/season</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox checked"></div>
+          <div class="feature-content">
+            <div class="feature-title">Weekly View with Print Support</div>
+            <div class="feature-desc">6-day grid with beat-centric display</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox checked"></div>
+          <div class="feature-content">
+            <div class="feature-title">CSV Export</div>
+            <div class="feature-desc">Download filtered bookings as spreadsheet</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox checked"></div>
+          <div class="feature-content">
+            <div class="feature-title">Dark Mode</div>
+            <div class="feature-desc">Theme toggle with localStorage persistence</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="checkbox checked"></div>
+          <div class="feature-content">
+            <div class="feature-title">Mobile-Responsive Design</div>
+            <div class="feature-desc">Touch-optimized interface for all screen sizes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="fixes">
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">🔧 How to Fix Critical Issues</h2>
+      </div>
+
+      <h3 style="margin: 24px 0 12px; font-size: 16px;">Fix #1: Supabase RLS Error</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 12px;">
+        <strong>Step 1:</strong> Open your Supabase dashboard
+      </p>
+      <div class="code-block">https://supabase.com/dashboard
+Project: ufkupyhlhgmsbjsjhlzh</div>
+
+      <p style="color: var(--text-secondary); margin: 16px 0 12px;">
+        <strong>Step 2:</strong> Go to SQL Editor and run this command:
+      </p>
+      <div class="code-block">-- Disable Row Level Security
+ALTER TABLE bookings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE sessions DISABLE ROW LEVEL SECURITY;
+
+-- This allows anonymous access (anon key) to work
+-- Your app uses custom authentication, not Supabase Auth</div>
+
+      <p style="color: var(--text-secondary); margin: 16px 0 12px;">
+        <strong>Step 3:</strong> Refresh your app at http://localhost:5176/
+      </p>
+
+      <div class="alert success">
+        <strong style="color: var(--success)">✓ Result:</strong> Database queries will work without authentication errors
+      </div>
+
+      <hr>
+
+      <h3 style="margin: 24px 0 12px; font-size: 16px;">Fix #2: Brevo Email Service</h3>
+
+      <p style="color: var(--text-secondary); margin-bottom: 12px;">
+        <strong>Option 1: Authorize Your IP (Recommended for Production)</strong>
+      </p>
+      <div class="code-block">1. Visit: https://app.brevo.com/security/authorised_ips
+2. Log in to your Brevo account
+3. Click "Add IP Address"
+4. Enter: 51.179.191.102
+5. Click "Save"</div>
+
+      <p style="color: var(--text-secondary); margin: 16px 0 12px;">
+        <strong>Option 2: Remove IP Restrictions (Easier for Development)</strong>
+      </p>
+      <div class="code-block">1. Visit: https://app.brevo.com/security/authorised_ips
+2. Remove all IP addresses from the whitelist
+3. This allows API access from any IP address</div>
+
+      <p style="color: var(--text-secondary); margin: 16px 0 12px;">
+        <strong>Option 3: Keep Mock Mode (Current Setup)</strong>
+      </p>
+      <div class="code-block"># Already configured in your .env file
+# Emails are simulated (logged to console)
+# Good for development, but no real emails sent</div>
+
+      <div class="alert info">
+        <strong style="color: var(--info)">ℹ Note:</strong> Your app currently runs in mock email mode. It won't crash, but customers won't receive confirmation emails until you fix the Brevo IP issue.
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">📝 Project Files Summary</h2>
+      </div>
+
+      <div class="files-grid">
+        <div class="file-card">
+          <div class="file-title">Components</div>
+          <div class="file-desc">
+            9 React components<br>
+            BookingForm, Dashboard, LoginForm, SessionSelector, ViewBookings, WeeklyView, Toast, ConfirmModal, ToastContext
+          </div>
+        </div>
+
+        <div class="file-card">
+          <div class="file-title">Utilities</div>
+          <div class="file-desc">
+            emailService.js (Brevo integration)<br>
+            dateHelpers.js (beat allocation)<br>
+            supabase.js (database client)
+          </div>
+        </div>
+
+        <div class="file-card">
+          <div class="file-title">Tech Stack</div>
+          <div class="file-desc">
+            React 19, Vite 8<br>
+            Tailwind CSS 3<br>
+            Supabase (PostgreSQL)
+          </div>
+        </div>
+
+        <div class="file-card">
+          <div class="file-title">Lines of Code</div>
+          <div class="file-desc">
+            ~1,600 lines CSS<br>
+            ~14 JS/JSX files<br>
+            Complete booking system
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const tabName = tab.dataset.tab;
+
+    // Update active tab
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+
+    // Show content
+    document.querySelectorAll('.tab-content').forEach(content => {
+      content.classList.remove('active');
+    });
+    document.getElementById(tabName).classList.add('active');
+  });
+});
+
+// Animate stats on load
+window.addEventListener('load', () => {
+  const statValues = document.querySelectorAll('.stat-value');
+  statValues.forEach(stat => {
+    const text = stat.textContent;
+    const value = parseInt(text);
+    if (!isNaN(value)) {
+      let current = 0;
+      const increment = value / 30;
+      const isPercent = text.includes('%');
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= value) {
+          stat.textContent = value + (isPercent ? '%' : '');
+          clearInterval(timer);
+        } else {
+          stat.textContent = Math.floor(current) + (isPercent ? '%' : '');
+        }
+      }, 20);
+    }
+  });
+});
+</script>
+
+</body>
+</html>
