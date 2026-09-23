@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Search, Filter, Calendar, User, Phone, Mail, ChevronDown, ChevronUp, X, Download } from 'lucide-react'
 import { BEATS, formatDateFull } from '../utils/dateHelpers'
+import jsPDF from 'jspdf'
 
 const ITEMS_PER_PAGE = 10
 
@@ -116,6 +117,32 @@ function ViewBookings({ bookings, sessions, onDeleteBooking, onEditBooking }) {
     }
     return booking.days_count || 0
   }
+
+  const generateBookingPdf = (booking) => {
+    const doc = new jsPDF();
+    const sessionName = getSessionName(booking.session_id);
+
+    // Set up the PDF
+    doc.setFontSize(20);
+    doc.text('Booking Confirmation', 105, 20, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text(`Name: ${booking.name || 'N/A'}`, 20, 30);
+    doc.text(`Email: ${booking.email || 'N/A'}`, 20, 40);
+    doc.text(`Phone: ${booking.phone || 'N/A'}`, 20, 50);
+    doc.text(`Week: ${booking.week}`, 20, 60);
+    doc.text(`Days: ${getDaysDescription(booking)}`, 20, 70);
+    doc.text(`Type: ${booking.booking_type === 'consecutive' ? 'Auto' : 'Flexible'}`, 20, 80);
+    doc.text(`Beat/Loch: ${getBeatDescription(booking)}`, 20, 90);
+    doc.text(`Season: ${sessionName}`, 20, 100);
+    doc.text(`Booked On: ${booking.created_at ? new Date(booking.created_at).toLocaleDateString() : 'N/A'}`, 20, 110);
+
+    // Save the PDF
+    doc.save(`booking-${booking.id || new Date().getTime()}.pdf`);
+  };
+
+  const handlePdfExport = (booking) => {
+    generateBookingPdf(booking);
+  };
 
   const clearFilters = () => {
     setSearchQuery('')
@@ -395,6 +422,22 @@ function ViewBookings({ bookings, sessions, onDeleteBooking, onEditBooking }) {
                           {expandedBooking === booking.id && (
                             <div style={{ fontSize: '0.65rem', color: 'var(--text-light)', marginTop: '2px' }}>
                               ID: {booking.id}
+                            </div>
+                          )}
+                          {expandedBooking === booking.id && (
+                            <div style={{ marginTop: '8px' }}>
+                              <button
+                                onClick={() => handlePdfExport(booking)}
+                                className="neu-btn neu-btn-primary"
+                                style={{
+                                  width: '100%',
+                                  fontSize: '0.75rem',
+                                  padding: '6px 12px'
+                                }}
+                              >
+                                <Printer size={16} />
+                                Download PDF
+                              </button>
                             </div>
                           )}
                         </div>
