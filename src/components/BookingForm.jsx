@@ -9,10 +9,19 @@ function BookingForm({ onSubmit, onCancel, sessionStart, sessionEnd, existingBoo
   const sessionOptions = [activeSession, upcomingSession].filter(Boolean)
 
   const currentSession = selectedSession || activeSession
-  const weeks = getWeeksInSession(
+  const allWeeks = getWeeksInSession(
     currentSession?.start_date || sessionStart,
     currentSession?.end_date || sessionEnd
   )
+
+  // Filter out past weeks - only show current and future weeks
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const weeks = allWeeks.filter(week => {
+    const weekEnd = new Date(week.endDate)
+    weekEnd.setHours(0, 0, 0, 0)
+    return weekEnd >= today
+  })
 
   const [name, setName] = useState(editingBooking?.name || '')
   const [email, setEmail] = useState(editingBooking?.email || '')
