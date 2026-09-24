@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Search, Filter, Calendar, User, Phone, Mail, ChevronDown, ChevronUp, X, Download } from 'lucide-react'
+import { Search, Filter, Calendar, User, Phone, Mail, ChevronDown, ChevronUp, X, Download, Printer } from 'lucide-react'
 import { BEATS, formatDateFull } from '../utils/dateHelpers'
 import jsPDF from 'jspdf'
 
