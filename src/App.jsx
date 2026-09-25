@@ -171,7 +171,8 @@ function AppContent() {
     const { id, ...bookingWithoutId } = booking
     const bookingData = {
       ...bookingWithoutId,
-      session_id: booking.session_id || activeSession?.id || null
+      session_id: booking.session_id || activeSession?.id || null,
+      booking_ref: `BK-${String(booking.id || Math.floor(Math.random()*900)+100).padStart(3,'0')}`
     }
 
     const { error: insertError } = await supabase

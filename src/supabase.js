@@ -21,6 +21,7 @@ const getDefaultTableData = (table) => {
         start_date: '2026-03-01',
         end_date: '2026-10-31',
         status: 'active',
+        booking_ref: "BK-101",
         created_at: new Date('2026-01-01').toISOString(),
         updated_at: new Date('2026-01-01').toISOString()
       },
@@ -31,6 +32,7 @@ const getDefaultTableData = (table) => {
         start_date: '2027-03-01',
         end_date: '2027-10-31',
         status: 'upcoming',
+        booking_ref: "BK-101",
         created_at: new Date('2026-01-01').toISOString(),
         updated_at: new Date('2026-01-01').toISOString()
       }
@@ -41,6 +43,7 @@ const getDefaultTableData = (table) => {
     return [
       {
         id: 'b-101',
+        booking_ref: 'BK-101',
         session_id: 'session-2026',
         name: 'Alexander Stewart',
         email: 'alex.stewart@highlandangling.co.uk',
@@ -56,10 +59,12 @@ const getDefaultTableData = (table) => {
           4: 'Beat 5',
           5: 'Loch'
         },
+        booking_ref: "BK-101",
         created_at: new Date('2026-03-01T08:00:00Z').toISOString()
       },
       {
         id: 'b-102',
+        booking_ref: 'BK-102',
         session_id: 'session-2026',
         name: 'Claire Fraser',
         email: 'claire.fraser@scotoutdoors.org',
@@ -72,10 +77,12 @@ const getDefaultTableData = (table) => {
           2: 'Beat 4',
           4: 'Loch'
         },
+        booking_ref: "BK-101",
         created_at: new Date('2026-03-02T09:30:00Z').toISOString()
       },
       {
         id: 'b-103',
+        booking_ref: 'BK-103',
         session_id: 'session-2026',
         name: 'David MacLeod',
         email: 'david.macleod@flyfishclub.com',
@@ -89,6 +96,7 @@ const getDefaultTableData = (table) => {
           2: 'Beat 3',
           3: 'Beat 4'
         },
+        booking_ref: "BK-101",
         created_at: new Date('2026-03-05T14:15:00Z').toISOString()
       }
     ]
@@ -283,7 +291,8 @@ class MockQueryBuilder {
       } else {
         records.push({
           id: item.id || `id-${Date.now()}`,
-          created_at: new Date().toISOString(),
+          booking_ref: "BK-101",
+        created_at: new Date().toISOString(),
           ...item
         })
       }
