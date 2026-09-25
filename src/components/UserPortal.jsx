@@ -428,11 +428,14 @@ export default function UserPortal({
                     onChange={(e) => setSelectedWeekIndex(Number(e.target.value))}
                     className="neu-form-input text-sm py-2 px-3 rounded-xl min-w-[240px]"
                   >
-                    {weeks.map((w, idx) => (
-                      <option key={w.weekNumber} value={idx}>
-                        Week {w.weekNumber} ({formatDate(w.startDate)} – {formatDate(w.endDate)})
-                      </option>
-                    ))}
+                    {weeks.map((w, idx) => {
+                      const isPast = new Date(w.endDate) < new Date()
+                      return (
+                        <option key={w.weekNumber} value={idx} disabled={isPast}>
+                          Week {w.weekNumber} ({formatDate(w.startDate)} – {formatDate(w.endDate)}){isPast ? ' — Past' : ''}
+                        </option>
+                      )
+                    })}
                   </select>
                 </div>
               </div>
