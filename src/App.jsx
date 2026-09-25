@@ -169,14 +169,11 @@ function AppContent() {
   const addBooking = async (booking) => {
     setSubmitting(true)
     const { id, ...bookingWithoutId } = booking
-    const { data: allRefs } = await supabase.from(BOOKING_TABLE).select('booking_ref')
-    let maxNum = 100
-    if (allRefs && allRefs.length) {
-      const refs = allRefs.map(r => parseInt(String(r.booking_ref || '').replace('BK-',''), 10)).filter(n => !isNaN(n))
-      if (refs.length) maxNum = Math.max(...refs)
-    }
-    const nextNum = maxNum + 1
+    const lastRaw = localStorage.getItem('last_bk_ref') || '100'
+    const lastNum = parseInt(lastRaw, 10) || 100
+    const nextNum = lastNum + 1
     const bookingRef = `BK-${String(nextNum).padStart(5, '0')}`
+    localStorage.setItem('last_bk_ref', String(nextNum))
     const bookingData = {
       ...bookingWithoutId,
       session_id: booking.session_id || activeSession?.id || null,
