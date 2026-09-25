@@ -6,6 +6,7 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_KEY
 // Session management constants
 export const SESSION_TABLE = 'sessions'
 export const BOOKING_TABLE = 'bookings'
+export const BOOKING_SEQ_TABLE = 'booking_seq'
 export const SETTINGS_TABLE = 'settings'
 
 // In-memory & LocalStorage Mock Provider for local development or when Supabase is not configured
@@ -37,6 +38,10 @@ const getDefaultTableData = (table) => {
         updated_at: new Date('2026-01-01').toISOString()
       }
     ]
+  }
+
+  if (table === BOOKING_SEQ_TABLE) {
+    return [{ id: 'counter', last_ref_number: 100 }]
   }
 
   if (table === BOOKING_TABLE) {

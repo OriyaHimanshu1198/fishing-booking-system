@@ -99,7 +99,7 @@ export default function UserPortal({
     e.preventDefault()
     if (!lookupEmail.trim()) return
 
-    const query = lookupEmail.trim().toLowerCase()
+    const query = lookupEmail.trim().toLowerCase(); const bkQuery = lookupEmail.trim().toUpperCase().startsWith('BK-') ? lookupEmail.trim().toUpperCase() : null
     const found = allBookings.filter((b) => {
       const matchEmail = b.email && b.email.toLowerCase() === query
       const matchPhone = b.phone && b.phone.replace(/\s+/g, '') === query.replace(/\s+/g, '')
@@ -128,7 +128,7 @@ export default function UserPortal({
 
       doc.setFontSize(10)
       doc.setTextColor(100)
-      doc.text(`Booking Ref: BK-${String(booking.id || '').padStart(3, '0').slice(-3)}`, 14, 30)
+      doc.text(`Booking Ref: BK-${String(booking.id || '').padStart(5, '0').slice(-3)}`, 14, 30)
       doc.text(`Date Issued: ${new Date().toLocaleDateString()}`, 14, 36)
 
       doc.setDrawColor(200)
@@ -567,7 +567,7 @@ export default function UserPortal({
               <div className="neu-inset rounded-2xl p-6 text-left space-y-3 text-sm">
                 <div className="flex justify-between border-b pb-2 border-slate-200 dark:border-slate-700">
                   <span className="text-slate-500">Booking Reference</span>
-                  <span className="font-mono font-bold text-teal-600">BK-{String(confirmedBooking.id || '').padStart(3, '0').slice(-3)}</span>
+                  <span className="font-mono font-bold text-teal-600">BK-{String(confirmedBooking.id || '').padStart(5, '0').slice(-3)}</span>
                 </div>
                 <div className="flex justify-between border-b pb-2 border-slate-200 dark:border-slate-700">
                   <span className="text-slate-500">Booking Period</span>

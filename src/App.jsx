@@ -169,11 +169,17 @@ function AppContent() {
   const addBooking = async (booking) => {
     setSubmitting(true)
     const { id, ...bookingWithoutId } = booking
+    const { data: seqData } = await supabase.from('booking_seq').select('last_ref_number').limit(1)
+    const lastNum = seqData && seqData[0] ? seqData[0].last_ref_number : 100
+    const nextNum = lastNum + 1
+    const bookingRef = `BK-${String(nextNum).padStart(5, '0')}`
     const bookingData = {
       ...bookingWithoutId,
       session_id: booking.session_id || activeSession?.id || null,
-      booking_ref: `BK-${String(booking.id || Math.floor(Math.random()*900)+100).padStart(3,'0')}`
+      booking_ref: bookingRef
     }
+
+    await supabase.from('booking_seq').update({ last_ref_number: nextNum }).eq('id', 'counter')
 
     const { error: insertError } = await supabase
       .from('bookings')
