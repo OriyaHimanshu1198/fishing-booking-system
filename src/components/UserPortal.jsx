@@ -74,6 +74,7 @@ export default function UserPortal({
   onToggleDarkMode
 }) {
   const [activeTab, setActiveTab] = useState('overview') // 'overview' | 'availability' | 'book' | 'lookup'
+  const [selectedSeasonId, setSelectedSeasonId] = useState(activeSession?.id || (sessions[0]?.id) || '')
   const [selectedWeekIndex, setSelectedWeekIndex] = useState(0)
   const [lookupEmail, setLookupEmail] = useState('')
   const [lookupResults, setLookupResults] = useState(null)
@@ -81,14 +82,15 @@ export default function UserPortal({
   const [confirmedBooking, setConfirmedBooking] = useState(null)
   const [selectedBeatInfo, setSelectedBeatInfo] = useState('Beat 1')
 
-  const currentSession = activeSession || sessions[0]
+  const selectedSeason = sessions.find(s => s.id === selectedSeasonId) || activeSession || sessions[0]
+  const currentSession = selectedSeason || activeSession || sessions[0]
 
   const weeks = useMemo(() => {
     return getWeeksInSession(
-      currentSession?.start_date || sessionStart || '2026-03-01',
-      currentSession?.end_date || sessionEnd || '2026-10-31'
+      selectedSeason?.start_date || sessionStart || '2026-03-01',
+      selectedSeason?.end_date || sessionEnd || '2026-10-31'
     )
-  }, [currentSession, sessionStart, sessionEnd])
+  }, [selectedSeason, sessionStart, sessionEnd])
 
   const currentWeek = weeks[selectedWeekIndex] || weeks[0]
 
@@ -402,6 +404,21 @@ export default function UserPortal({
                   <p className="text-sm text-slate-500 dark:text-slate-400">
                     Browse open rods by week (Monday through Saturday)
                   </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Select Season:</label>
+                  <select
+                    value={selectedSeasonId}
+                    onChange={(e) => { setSelectedSeasonId(e.target.value); setSelectedWeekIndex(0) }}
+                    className="neu-form-input text-sm py-2 px-3 rounded-xl min-w-[200px]"
+                  >
+                    {sessions.map((s) => (
+                      <option key={s.id || s.name} value={s.id || s.name}>
+                        {s.name || `Season ${s.id}`}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="flex items-center gap-3">
