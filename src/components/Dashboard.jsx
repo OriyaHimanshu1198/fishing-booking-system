@@ -28,7 +28,9 @@ function Dashboard({ bookings, sessionStart, sessionEnd, onDeleteBooking, onEdit
     return (
       (booking.name && booking.name.toLowerCase().includes(query)) ||
       (booking.email && booking.email.toLowerCase().includes(query)) ||
-      (booking.phone && booking.phone.toLowerCase().includes(query))
+      (booking.phone && booking.phone.toLowerCase().includes(query)) ||
+      (String(booking.id || '').toLowerCase().includes(query)) ||
+      (String(booking.id || '').padStart(3, '0').slice(-3).toLowerCase().includes(query))
     )
   })
 
