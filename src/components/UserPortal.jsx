@@ -129,7 +129,7 @@ export default function UserPortal({
 
       doc.setFontSize(10)
       doc.setTextColor(100)
-      doc.text(`Booking Ref: BK-${String(booking.id || '').padStart(5, '0').slice(-3)}`, 14, 30)
+      doc.text(`Booking Ref: ${String(booking.booking_ref || `BK-${String(booking.id||'').padStart(5,'0')}`).replace('BK-','BK-')}`, 14, 30)
       doc.text(`Date Issued: ${new Date().toLocaleDateString()}`, 14, 36)
 
       doc.setDrawColor(200)
@@ -568,7 +568,7 @@ export default function UserPortal({
               <div className="neu-inset rounded-2xl p-6 text-left space-y-3 text-sm">
                 <div className="flex justify-between border-b pb-2 border-slate-200 dark:border-slate-700">
                   <span className="text-slate-500">Booking Reference</span>
-                  <span className="font-mono font-bold text-teal-600">BK-{String(confirmedBooking.id || '').padStart(5, '0').slice(-3)}</span>
+                  <span className="font-mono font-bold text-teal-600">BK-${String(confirmedBooking.booking_ref || confirmedBooking.id || '').replace('BK-','').padStart(5,'0').slice(-5)}</span>
                 </div>
                 <div className="flex justify-between border-b pb-2 border-slate-200 dark:border-slate-700">
                   <span className="text-slate-500">Booking Period</span>
