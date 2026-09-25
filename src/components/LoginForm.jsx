@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Lock, User } from 'lucide-react'
 
-function LoginForm({ onLogin }) {
+function LoginForm({ onLogin, onCancel }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -20,6 +20,15 @@ function LoginForm({ onLogin }) {
   return (
     <div className="login-container">
       <div className="login-card animate-slide-up">
+        {onCancel && (
+          <button
+            onClick={onCancel}
+            className="neu-btn neu-btn-ghost mb-4 text-xs flex items-center gap-1.5"
+            style={{ marginBottom: '16px', padding: '6px 12px' }}
+          >
+            ← Return to Angler Site
+          </button>
+        )}
         <div style={{ textAlign: 'center', marginBottom: '36px' }}>
           <div className="login-icon">
             <Lock size={32} />

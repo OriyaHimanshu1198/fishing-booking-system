@@ -8,17 +8,32 @@ export const emailService = {
   // For production, you might want to use localStorage or a server-side counter
   _dailyEmailCount: 0,
   _lastResetDate: new Date().toDateString(),
+  _isApiKeyInvalid: false,
 
   /**
    * Initialize Brevo HTTP client
    * @returns {AxiosInstance|null} - Axios instance or null if not configured
    */
   _getBrevoClient() {
+    if (this._isApiKeyInvalid) {
+      return null;
+    }
+
     const apiKey = import.meta.env.VITE_BREVO_API_KEY;
-    if (!apiKey) {
+    if (!apiKey || typeof apiKey !== 'string' || apiKey.trim() === '' || apiKey.includes('placeholder')) {
       // Console warning only once per session to avoid spam
       if (typeof window !== 'undefined' && !window._brevoWarningShown) {
-        console.warn('[Email Service] Brevo API key not configured - using mock mode for development');
+        console.info('[Email Service] Brevo API key not configured - using mock mode for development');
+        window._brevoWarningShown = true;
+      }
+      return null;
+    }
+
+    const trimmedKey = apiKey.trim();
+    // Brevo v3 API keys start with xkeysib-
+    if (!trimmedKey.startsWith('xkeysib-')) {
+      if (typeof window !== 'undefined' && !window._brevoWarningShown) {
+        console.warn('[Email Service] Brevo API key is not a valid v3 key (must start with xkeysib-) - using mock mode');
         window._brevoWarningShown = true;
       }
       return null;
@@ -27,7 +42,7 @@ export const emailService = {
     return axios.create({
       baseURL: 'https://api.brevo.com/v3',
       headers: {
-        'api-key': apiKey,
+        'api-key': trimmedKey,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
@@ -130,16 +145,17 @@ export const emailService = {
         queued: false
       };
     } catch (error) {
-      // Handle Brevo API errors
+      const status = error.response?.status;
       const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
-      console.error('[Email Service] Brevo error:', {
-        status: error.response?.status,
-        message: errorMsg,
-        details: error.response?.data
-      });
+
+      if (status === 401 || errorMsg.includes('Key not found') || errorMsg.includes('unauthorized')) {
+        this._isApiKeyInvalid = true;
+        console.warn('[Email Service] Brevo API key is not active or unauthorized (401 Key not found). Switched to mock email mode.');
+        return this._mockSend(bookingData, 'confirmation');
+      }
 
       // Check if it's a rate limit error from Brevo (HTTP 429)
-      if (error.response?.status === 429) {
+      if (status === 429) {
         console.warn('[Email Service] Brevo daily limit reached - queuing for tomorrow');
         // In production, you'd save to a database queue here
         return {
@@ -151,7 +167,7 @@ export const emailService = {
       }
 
       // For other errors, fallback to mock to avoid breaking the booking flow
-      console.warn('[Email Service] Falling back to mock mode due to error');
+      console.warn('[Email Service] Brevo delivery failed, using mock mode:', errorMsg);
       return this._mockSend(bookingData, 'confirmation');
     }
   },
@@ -204,14 +220,17 @@ export const emailService = {
         queued: false
       };
     } catch (error) {
+      const status = error.response?.status;
       const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
-      console.error('[Email Service] Brevo cancellation error:', {
-        status: error.response?.status,
-        message: errorMsg
-      });
+
+      if (status === 401 || errorMsg.includes('Key not found') || errorMsg.includes('unauthorized')) {
+        this._isApiKeyInvalid = true;
+        console.warn('[Email Service] Brevo API key is not active or unauthorized (401 Key not found). Switched to mock email mode.');
+        return this._mockSend(bookingData, 'cancellation');
+      }
 
       // Check for rate limit
-      if (error.response?.status === 429) {
+      if (status === 429) {
         console.warn('[Email Service] Brevo daily limit reached for cancellation');
         return {
           success: true,
@@ -222,7 +241,7 @@ export const emailService = {
       }
 
       // Fallback to mock
-      console.warn('[Email Service] Falling back to mock mode for cancellation');
+      console.warn('[Email Service] Brevo cancellation notice failed, using mock mode:', errorMsg);
       return this._mockSend(bookingData, 'cancellation');
     }
   },
@@ -276,11 +295,17 @@ export const emailService = {
         queued: false
       };
     } catch (error) {
+      const status = error.response?.status;
       const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
-      console.error('[Email Service] Brevo reminder error:', errorMsg);
+
+      if (status === 401 || errorMsg.includes('Key not found') || errorMsg.includes('unauthorized')) {
+        this._isApiKeyInvalid = true;
+        console.warn('[Email Service] Brevo API key is not active or unauthorized (401 Key not found). Switched to mock email mode.');
+        return this._mockSend(bookingData, `reminder-${daysUntil}days`);
+      }
 
       // Check for rate limit
-      if (error.response?.status === 429) {
+      if (status === 429) {
         console.warn('[Email Service] Brevo daily limit reached for reminder');
         return {
           success: true,
@@ -291,7 +316,7 @@ export const emailService = {
       }
 
       // Fallback to mock
-      console.warn('[Email Service] Falling back to mock mode for reminder');
+      console.warn('[Email Service] Brevo reminder delivery failed, using mock mode:', errorMsg);
       return this._mockSend(bookingData, `reminder-${daysUntil}days`);
     }
   },
@@ -340,7 +365,7 @@ export const emailService = {
       : '<li>No specific beat assignments (flexible booking)</li>';
 
     // Format dates nicely
-    const formatDate = (dateString) => {
+    const _formatDate = (dateString) => {
       if (!dateString) return 'Not set';
       return new Date(dateString).toLocaleDateString('en-US', {
         weekday: 'short',

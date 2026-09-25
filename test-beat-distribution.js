@@ -26,7 +26,7 @@ for (let i = 1; i <= 6; i++) {
   }
 
   // Format output as readable array
-  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const _dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const formatted = allDays.map(d => allocations[d]).join(', ');
   console.log(`Booking ${i}: ${formatted}`);
 

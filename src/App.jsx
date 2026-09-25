@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { Calendar, Plus, Users, LogOut, ChevronDown, Eye, Moon, Sun } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Calendar, Plus, Users, LogOut, ChevronDown, Eye, Moon, Sun, Compass } from 'lucide-react'
 import Dashboard from './components/Dashboard'
 import BookingForm from './components/BookingForm'
 import WeeklyView from './components/WeeklyView'
 import ViewBookings from './components/ViewBookings'
 import LoginForm from './components/LoginForm'
 import SessionSelector from './components/SessionSelector'
+import UserPortal from './components/UserPortal'
 import Toast from './components/Toast'
 import ConfirmModal from './components/ConfirmModal'
 import { ToastProvider, useToast } from './components/ToastContext'
@@ -13,10 +14,7 @@ import {
   supabase,
   fetchSessions,
   createSession,
-  updateSessionStatus,
   getActiveSession,
-  getUpcomingSession,
-  autoCreateNextYearSession,
   migrateBookingsToSessions
 } from './supabase'
 import emailService from './utils/emailService'
@@ -53,13 +51,13 @@ function useClickOutside(ref, handler) {
 
 function AppContent() {
   const { toasts, removeToast, success, error: toastError, info } = useToast()
+  const [currentMode, setCurrentMode] = useState('user') // 'user' | 'admin'
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [sessionStart, setSessionStart] = useState('')
   const [sessionEnd, setSessionEnd] = useState('')
   const [sessionConfigured, setSessionConfigured] = useState(false)
   const [bookings, setBookings] = useState([])
   const [allBookings, setAllBookings] = useState([])
-  const [showForm, setShowForm] = useState(false)
   const [editingBooking, setEditingBooking] = useState(null)
   const [currentView, setCurrentView] = useState('dashboard')
   const [loading, setLoading] = useState(true)
@@ -165,10 +163,8 @@ function AppContent() {
   }
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchSettings()
-    }
-  }, [isAuthenticated])
+    fetchSettings()
+  }, [])
 
   const addBooking = async (booking) => {
     setSubmitting(true)
@@ -206,7 +202,6 @@ function AppContent() {
 
     await fetchBookings(activeSession?.id)
     await fetchAllBookings()
-    setShowForm(false)
     setEditingBooking(null)
     setCurrentView('dashboard')
     success('Booking created successfully! Confirmation email sent.')
@@ -251,7 +246,6 @@ function AppContent() {
 
     await fetchBookings(activeSession?.id)
     await fetchAllBookings()
-    setShowForm(false)
     setEditingBooking(null)
     setCurrentView('dashboard')
     success('Booking updated successfully! Confirmation email sent.')
@@ -310,7 +304,6 @@ function AppContent() {
 
   const handleEditBooking = (booking) => {
     setEditingBooking(booking)
-    setShowForm(true)
     setCurrentView('form')
   }
 
@@ -377,13 +370,39 @@ function AppContent() {
 
   const handleLogout = () => {
     setIsAuthenticated(false)
+    setCurrentMode('user')
     setCurrentView('dashboard')
+  }
+
+  if (currentMode === 'user') {
+    return (
+      <>
+        <UserPortal
+          sessions={sessions}
+          activeSession={activeSession}
+          upcomingSession={upcomingSession}
+          sessionStart={sessionStart}
+          sessionEnd={sessionEnd}
+          bookings={bookings}
+          allBookings={allBookings}
+          onAddBooking={addBooking}
+          onSwitchToAdmin={() => setCurrentMode('admin')}
+          submitting={submitting}
+          darkMode={darkMode}
+          onToggleDarkMode={() => setDarkMode(!darkMode)}
+        />
+        <Toast toasts={toasts} onRemove={removeToast} />
+      </>
+    )
   }
 
   if (!isAuthenticated) {
     return (
       <>
-        <LoginForm onLogin={handleLogin} />
+        <LoginForm
+          onLogin={handleLogin}
+          onCancel={() => setCurrentMode('user')}
+        />
         <Toast toasts={toasts} onRemove={removeToast} />
       </>
     )
@@ -555,6 +574,15 @@ function AppContent() {
             </div>
 
             <button
+              onClick={() => setCurrentMode('user')}
+              className="neu-btn neu-btn-ghost flex items-center gap-1.5"
+              title="Return to Public Angler Portal"
+            >
+              <Compass size={16} />
+              <span>Guest Site</span>
+            </button>
+
+            <button
               onClick={() => {
                 if (!sessionConfigured) {
                   toastError('Please configure season dates first in the Dashboard')
@@ -562,7 +590,6 @@ function AppContent() {
                   return
                 }
                 setEditingBooking(null)
-                setShowForm(true)
                 setCurrentView('form')
               }}
               className={`neu-btn ${sessionConfigured ? 'neu-btn-primary' : 'neu-btn-ghost'}`}

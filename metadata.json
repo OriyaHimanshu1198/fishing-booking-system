@@ -1,0 +1,8 @@
+{
+  "name": "Fishing Booking System",
+  "description": "Comprehensive fishing booking and beat allocation management system with season schedules, weekly views, and email notifications.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

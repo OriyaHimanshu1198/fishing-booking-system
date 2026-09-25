@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Search, Filter, Calendar, User, Phone, Mail, ChevronDown, ChevronUp, X, Download, Printer } from 'lucide-react'
-import { BEATS, formatDateFull } from '../utils/dateHelpers'
+import { Search, Filter, ChevronDown, ChevronUp, X, Download, Printer } from 'lucide-react'
+import { BEATS } from '../utils/dateHelpers'
 import jsPDF from 'jspdf'
 
 const ITEMS_PER_PAGE = 10
@@ -153,7 +153,7 @@ function ViewBookings({ bookings, sessions, onDeleteBooking, onEditBooking }) {
 
   const hasActiveFilters = searchQuery || selectedSession !== 'all' || selectedWeek !== 'all' || selectedBeat !== 'all'
 
-  const SortIcon = ({ field }) => {
+  const renderSortIcon = (field) => {
     if (sortField !== field) return null
     return sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
   }
@@ -347,7 +347,7 @@ function ViewBookings({ bookings, sessions, onDeleteBooking, onEditBooking }) {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Name
-                    <SortIcon field="name" />
+                    {renderSortIcon('name')}
                   </div>
                 </th>
                 <th>Contact</th>
@@ -357,7 +357,7 @@ function ViewBookings({ bookings, sessions, onDeleteBooking, onEditBooking }) {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Week
-                    <SortIcon field="week" />
+                    {renderSortIcon('week')}
                   </div>
                 </th>
                 <th>Days</th>
@@ -370,7 +370,7 @@ function ViewBookings({ bookings, sessions, onDeleteBooking, onEditBooking }) {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Booked On
-                    <SortIcon field="created_at" />
+                    {renderSortIcon('created_at')}
                   </div>
                 </th>
                 <th>Actions</th>

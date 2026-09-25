@@ -72,7 +72,7 @@ function BookingForm({ onSubmit, onCancel, sessionStart, sessionEnd, existingBoo
   const validateForm = () => {
     const newErrors = {}
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-    const phoneRegex = /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/
+    const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,9}$/
 
     if (!name.trim()) {
       newErrors.name = 'Full name is required'
