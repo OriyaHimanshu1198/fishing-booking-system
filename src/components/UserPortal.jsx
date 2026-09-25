@@ -104,7 +104,8 @@ export default function UserPortal({
       const matchEmail = b.email && b.email.toLowerCase() === query
       const matchPhone = b.phone && b.phone.replace(/\s+/g, '') === query.replace(/\s+/g, '')
       const matchId = String(b.id).toLowerCase() === query
-      return matchEmail || matchPhone || matchId
+      const matchBookingRef = bkQuery && String(b.booking_ref || '').toUpperCase() === bkQuery
+      return matchEmail || matchPhone || matchId || matchBookingRef
     })
 
     setLookupResults(found)
