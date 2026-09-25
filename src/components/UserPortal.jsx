@@ -128,7 +128,7 @@ export default function UserPortal({
 
       doc.setFontSize(10)
       doc.setTextColor(100)
-      doc.text(`Booking Ref: ${booking.id || 'CONFIRMED'}`, 14, 30)
+      doc.text(`Booking Ref: BK-${String(booking.id || '').padStart(3, '0').slice(-3)}`, 14, 30)
       doc.text(`Date Issued: ${new Date().toLocaleDateString()}`, 14, 36)
 
       doc.setDrawColor(200)
@@ -152,11 +152,18 @@ export default function UserPortal({
       const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
       let y = 126
       if (booking.beat_allocations) {
+        doc.setFontSize(10)
+        doc.text('Beat / Dates', 14, y)
+        y += 8
+        const weekStart = currentWeek?.startDate || new Date().toISOString()
         Object.entries(booking.beat_allocations).forEach(([dayIdx, beat]) => {
-          const dayName = dayNames[Number(dayIdx)] || `Day ${Number(dayIdx) + 1}`
-          doc.text(`${dayName}:`, 20, y)
-          doc.text(`${beat}`, 70, y)
-          y += 8
+          const d = new Date(weekStart)
+          d.setDate(d.getDate() + Number(dayIdx))
+          const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+          const dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][Number(dayIdx)] || `Day ${Number(dayIdx) + 1}`
+          doc.text(`${dayName} (${dateStr}):`, 20, y)
+          doc.text(`${beat}`, 90, y)
+          y += 7
         })
       }
 
@@ -560,7 +567,11 @@ export default function UserPortal({
               <div className="neu-inset rounded-2xl p-6 text-left space-y-3 text-sm">
                 <div className="flex justify-between border-b pb-2 border-slate-200 dark:border-slate-700">
                   <span className="text-slate-500">Booking Reference</span>
-                  <span className="font-mono font-bold text-teal-600">{confirmedBooking.id || 'CONFIRMED'}</span>
+                  <span className="font-mono font-bold text-teal-600">BK-{String(confirmedBooking.id || '').padStart(3, '0').slice(-3)}</span>
+                </div>
+                <div className="flex justify-between border-b pb-2 border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-500">Booking Period</span>
+                  <span className="font-bold">Week {confirmedBooking.week} — {formatDate(currentWeek?.startDate) || ''} to {formatDate(currentWeek?.endDate) || ''}</span>
                 </div>
                 <div className="flex justify-between border-b pb-2 border-slate-200 dark:border-slate-700">
                   <span className="text-slate-500">Week Number</span>
