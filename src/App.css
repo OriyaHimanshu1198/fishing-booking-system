@@ -132,7 +132,7 @@ body {
    ========================================== */
 
 .neu-header {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-subtle);
@@ -143,9 +143,21 @@ body {
   transition: all 0.25s ease;
 }
 
-.dark .neu-header {
-  background: rgba(17, 24, 39, 0.85);
-  border-bottom-color: var(--border-subtle);
+.dark .neu-header,
+[data-theme="dark"] .neu-header {
+  background: rgba(15, 23, 42, 0.96) !important;
+  border-bottom-color: #1e293b !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dark .neu-header-title,
+[data-theme="dark"] .neu-header-title {
+  color: #f8fafc !important;
+}
+
+.dark .neu-header-subtitle,
+[data-theme="dark"] .neu-header-subtitle {
+  color: #94a3b8 !important;
 }
 
 .neu-header-inner {
