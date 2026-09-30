@@ -795,28 +795,74 @@ body {
   font-weight: 700;
 }
 
-/* Exception: Elements inside dark gradient containers (WeatherWidget, RiverMap, Dark Card) retain crisp light text */
-.bg-gradient-to-br,
-.bg-gradient-to-br h1,
-.bg-gradient-to-br h2,
-.bg-gradient-to-br h3,
-.bg-gradient-to-br h4,
-.bg-gradient-to-br p,
-.bg-gradient-to-br span,
-.bg-slate-900,
-.bg-slate-900 h1,
-.bg-slate-900 h2,
-.bg-slate-900 h3,
-.bg-slate-900 h4,
-.bg-slate-900 p,
-.bg-slate-900 span,
-.river-map-container,
+/* ==========================================================
+   RIVER & BEAT INTERACTIVE MAP - CRISP WHITE TEXT ON WHITE/DARK SCREENS
+   ========================================================== */
+
+:root:not(.dark):not([data-theme="dark"]) .river-map-container,
+.river-map-container {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e1b4b 100%) !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .river-map-container h1,
+:root:not(.dark):not([data-theme="dark"]) .river-map-container h2,
+:root:not(.dark):not([data-theme="dark"]) .river-map-container h3,
+:root:not(.dark):not([data-theme="dark"]) .river-map-container h4,
+:root:not(.dark):not([data-theme="dark"]) .river-map-container h5,
+:root:not(.dark):not([data-theme="dark"]) .river-map-container h6,
 .river-map-container h1,
 .river-map-container h2,
 .river-map-container h3,
 .river-map-container h4,
-.river-map-container p,
-.river-map-container span {
-  color: revert !important;
+.river-map-container h5,
+.river-map-container h6 {
+  color: #ffffff !important;
 }
+
+:root:not(.dark):not([data-theme="dark"]) .river-map-container p,
+.river-map-container p {
+  color: #e2e8f0 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .river-map-container .text-white,
+.river-map-container .text-white {
+  color: #ffffff !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .river-map-container .text-slate-100,
+:root:not(.dark):not([data-theme="dark"]) .river-map-container .text-slate-200,
+:root:not(.dark):not([data-theme="dark"]) .river-map-container .text-slate-300,
+:root:not(.dark):not([data-theme="dark"]) .river-map-container .text-slate-400,
+.river-map-container .text-slate-100,
+.river-map-container .text-slate-200,
+.river-map-container .text-slate-300,
+.river-map-container .text-slate-400 {
+  color: #cbd5e1 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .river-map-container .text-emerald-300,
+:root:not(.dark):not([data-theme="dark"]) .river-map-container .text-emerald-400,
+:root:not(.dark):not([data-theme="dark"]) .river-map-container .text-emerald-500,
+.river-map-container .text-emerald-300,
+.river-map-container .text-emerald-400,
+.river-map-container .text-emerald-500 {
+  color: #34d399 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .river-map-container .text-cyan-300,
+:root:not(.dark):not([data-theme="dark"]) .river-map-container .text-cyan-400,
+.river-map-container .text-cyan-300,
+.river-map-container .text-cyan-400 {
+  color: #67e8f9 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .river-map-container .text-rose-300,
+:root:not(.dark):not([data-theme="dark"]) .river-map-container .text-rose-400,
+.river-map-container .text-rose-300,
+.river-map-container .text-rose-400 {
+  color: #f87171 !important;
+}
+
 
