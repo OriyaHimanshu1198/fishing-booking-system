@@ -634,14 +634,33 @@ body {
    ========================================================== */
 
 :root:not(.dark):not([data-theme="dark"]) {
-  /* Ensure all gray/muted text is completely sharp on white */
+  color: #0f172a;
+}
+
+/* All headings must be bold, rich black-slate on white */
+:root:not(.dark):not([data-theme="dark"]) h1,
+:root:not(.dark):not([data-theme="dark"]) h2,
+:root:not(.dark):not([data-theme="dark"]) h3,
+:root:not(.dark):not([data-theme="dark"]) h4,
+:root:not(.dark):not([data-theme="dark"]) h5,
+:root:not(.dark):not([data-theme="dark"]) h6 {
+  color: #0f172a !important;
+}
+
+/* All standard paragraphs must be clear, dark slate */
+:root:not(.dark):not([data-theme="dark"]) p {
   color: #1e293b;
 }
 
-:root:not(.dark):not([data-theme="dark"]) .text-slate-400,
-:root:not(.dark):not([data-theme="dark"]) .text-gray-400,
-:root:not(.dark):not([data-theme="dark"]) .text-muted-foreground {
-  color: #475569 !important;
+/* Tailwind slate overrides for light mode */
+:root:not(.dark):not([data-theme="dark"]) .text-slate-800,
+:root:not(.dark):not([data-theme="dark"]) .text-slate-900 {
+  color: #0f172a !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .text-slate-700,
+:root:not(.dark):not([data-theme="dark"]) .text-slate-600 {
+  color: #1e293b !important;
 }
 
 :root:not(.dark):not([data-theme="dark"]) .text-slate-500,
@@ -649,8 +668,16 @@ body {
   color: #334155 !important;
 }
 
-:root:not(.dark):not([data-theme="dark"]) .text-slate-600 {
-  color: #1e293b !important;
+:root:not(.dark):not([data-theme="dark"]) .text-slate-400,
+:root:not(.dark):not([data-theme="dark"]) .text-slate-300,
+:root:not(.dark):not([data-theme="dark"]) .text-gray-400,
+:root:not(.dark):not([data-theme="dark"]) .text-muted-foreground {
+  color: #475569 !important;
+}
+
+/* Headers & Subtitles */
+:root:not(.dark):not([data-theme="dark"]) .neu-header-title {
+  color: #0f172a !important;
 }
 
 :root:not(.dark):not([data-theme="dark"]) .neu-header-subtitle {
@@ -658,27 +685,78 @@ body {
   font-weight: 600 !important;
 }
 
+/* Forms & Labels */
 :root:not(.dark):not([data-theme="dark"]) .neu-form-label {
   color: #0f172a !important;
   font-weight: 800 !important;
 }
 
+:root:not(.dark):not([data-theme="dark"]) .neu-form-title {
+  color: #0f172a !important;
+}
+
+/* Tables */
 :root:not(.dark):not([data-theme="dark"]) .neu-table th {
   color: #0f172a !important;
   font-weight: 800 !important;
   background: #f1f5f9 !important;
 }
 
-:root:not(.dark):not([data-theme="dark"]) .neu-table-footer {
+:root:not(.dark):not([data-theme="dark"]) .neu-table td {
   color: #1e293b !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .neu-table-footer {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+/* KPI Cards & Dashboard Stats */
+:root:not(.dark):not([data-theme="dark"]) .kpi-number {
+  color: #0f172a !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .kpi-label {
+  color: #334155 !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .kpi-sublabel {
+  color: #475569 !important;
   font-weight: 600 !important;
 }
 
+:root:not(.dark):not([data-theme="dark"]) .beat-card-name {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .beat-card-count {
+  color: #047857 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .beat-card-label {
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .config-pill-label {
+  color: #475569 !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .config-pill-value {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+/* Input Placeholders */
 :root:not(.dark):not([data-theme="dark"]) input::placeholder,
 :root:not(.dark):not([data-theme="dark"]) textarea::placeholder {
   color: #64748b !important;
 }
 
+/* Nav Tabs */
 :root:not(.dark):not([data-theme="dark"]) .neu-nav-tab {
   color: #334155 !important;
 }
@@ -704,3 +782,29 @@ body {
   color: #15803d;
   font-weight: 700;
 }
+
+/* Exception: Elements inside dark gradient containers (WeatherWidget, RiverMap, Dark Card) retain crisp light text */
+.bg-gradient-to-br,
+.bg-gradient-to-br h1,
+.bg-gradient-to-br h2,
+.bg-gradient-to-br h3,
+.bg-gradient-to-br h4,
+.bg-gradient-to-br p,
+.bg-gradient-to-br span,
+.bg-slate-900,
+.bg-slate-900 h1,
+.bg-slate-900 h2,
+.bg-slate-900 h3,
+.bg-slate-900 h4,
+.bg-slate-900 p,
+.bg-slate-900 span,
+.river-map-container,
+.river-map-container h1,
+.river-map-container h2,
+.river-map-container h3,
+.river-map-container h4,
+.river-map-container p,
+.river-map-container span {
+  color: revert !important;
+}
+
