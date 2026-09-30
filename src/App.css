@@ -942,5 +942,87 @@ body {
   color: #f87171 !important;
 }
 
+/* ==========================================================
+   ONLINE ANGLER RESERVATION & BOOKING FORM - CRISP WHITE TEXT
+   ========================================================== */
+
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container,
+.booking-section-container {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e1b4b 100%) !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container h1,
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container h2,
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container h3,
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container h4,
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container h5,
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container h6,
+.booking-section-container h1,
+.booking-section-container h2,
+.booking-section-container h3,
+.booking-section-container h4,
+.booking-section-container h5,
+.booking-section-container h6 {
+  color: #ffffff !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container p,
+.booking-section-container p {
+  color: #e2e8f0 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container .text-white,
+.booking-section-container .text-white {
+  color: #ffffff !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container .text-slate-100,
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container .text-slate-200,
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container .text-slate-300,
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container .text-slate-400,
+.booking-section-container .text-slate-100,
+.booking-section-container .text-slate-200,
+.booking-section-container .text-slate-300,
+.booking-section-container .text-slate-400 {
+  color: #cbd5e1 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container .text-emerald-300,
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container .text-emerald-400,
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container .text-emerald-500,
+.booking-section-container .text-emerald-300,
+.booking-section-container .text-emerald-400,
+.booking-section-container .text-emerald-500 {
+  color: #34d399 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container .text-cyan-300,
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container .text-cyan-400,
+.booking-section-container .text-cyan-300,
+.booking-section-container .text-cyan-400 {
+  color: #67e8f9 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container .text-amber-400,
+.booking-section-container .text-amber-400 {
+  color: #fbbf24 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container .text-rose-300,
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container .text-rose-400,
+.booking-section-container .text-rose-300,
+.booking-section-container .text-rose-400 {
+  color: #f87171 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container input,
+:root:not(.dark):not([data-theme="dark"]) .booking-section-container select {
+  color: #ffffff !important;
+  background-color: #0f172a !important;
+}
+
+
 
 

@@ -547,17 +547,8 @@ export default function UserPortal({
 
         {/* TAB 3: BOOKING FORM */}
         {activeTab === 'book' && (
-          <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
-            <div className="neu-raised rounded-3xl p-6 sm:p-8 space-y-6">
-              <div>
-                <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-                  Online Angler Reservation
-                </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Fill in your details below to secure your fishing rods.
-                </p>
-              </div>
-
+          <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">
+            <div className="booking-section-container bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 border border-slate-700/80 shadow-2xl space-y-6">
               <BookingForm
                 onSubmit={handleUserBookingSubmit}
                 onCancel={() => setActiveTab('overview')}
