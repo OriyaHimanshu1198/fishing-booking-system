@@ -23,19 +23,19 @@
   --accent-red: #ef4444;
   --accent-purple: #7c3aed;
 
-  /* Typography */
+  /* Typography - High Contrast for White Screens */
   --text-dark: #0f172a;
-  --text-body: #334155;
-  --text-muted: #64748b;
-  --text-light: #94a3b8;
+  --text-body: #1e293b;
+  --text-muted: #334155;
+  --text-light: #475569;
 
   /* Borders & Shadows */
-  --border-subtle: #e2e8f0;
-  --border-focus: #10b981;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+  --border-subtle: #cbd5e1;
+  --border-focus: #059669;
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.09), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
 
   /* Radii */
   --radius-xl: 20px;
@@ -57,11 +57,11 @@
   --primary-emerald-border: rgba(16, 185, 129, 0.3);
 
   --text-dark: #f8fafc;
-  --text-body: #cbd5e1;
-  --text-muted: #94a3b8;
-  --text-light: #64748b;
+  --text-body: #e2e8f0;
+  --text-muted: #cbd5e1;
+  --text-light: #94a3b8;
 
-  --border-subtle: #1e293b;
+  --border-subtle: #334155;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
@@ -627,4 +627,80 @@ body {
   .neu-form-card {
     padding: 20px;
   }
+}
+
+/* ==========================================================
+   HIGH CONTRAST & MAXIMUM VISIBILITY FOR LIGHT MODE (WHITE SCREEN)
+   ========================================================== */
+
+:root:not(.dark):not([data-theme="dark"]) {
+  /* Ensure all gray/muted text is completely sharp on white */
+  color: #1e293b;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .text-slate-400,
+:root:not(.dark):not([data-theme="dark"]) .text-gray-400,
+:root:not(.dark):not([data-theme="dark"]) .text-muted-foreground {
+  color: #475569 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .text-slate-500,
+:root:not(.dark):not([data-theme="dark"]) .text-gray-500 {
+  color: #334155 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .text-slate-600 {
+  color: #1e293b !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .neu-header-subtitle {
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .neu-form-label {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .neu-table th {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  background: #f1f5f9 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .neu-table-footer {
+  color: #1e293b !important;
+  font-weight: 600 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) input::placeholder,
+:root:not(.dark):not([data-theme="dark"]) textarea::placeholder {
+  color: #64748b !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .neu-nav-tab {
+  color: #334155 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .neu-nav-tab:hover {
+  color: #0f172a !important;
+  background: #e2e8f0 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .neu-nav-tab.active {
+  color: #ffffff !important;
+  background: #059669 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .badge-blue {
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 700;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .badge-green {
+  background: #dcfce7;
+  color: #15803d;
+  font-weight: 700;
 }
