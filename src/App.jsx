@@ -17,6 +17,7 @@ import {
   getActiveSession,
   migrateBookingsToSessions
 } from './supabase'
+import { generateRandomBookingRef } from './utils/bookingRef'
 import emailService from './utils/emailService'
 import './App.css'
 
@@ -52,7 +53,12 @@ function useClickOutside(ref, handler) {
 function AppContent() {
   const { toasts, removeToast, success, error: toastError, info } = useToast()
   const [currentMode, setCurrentMode] = useState('user') // 'user' | 'admin'
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return (
+      localStorage.getItem('fishing_admin_auth') === 'true' ||
+      sessionStorage.getItem('fishing_admin_auth') === 'true'
+    )
+  })
   const [sessionStart, setSessionStart] = useState('')
   const [sessionEnd, setSessionEnd] = useState('')
   const [sessionConfigured, setSessionConfigured] = useState(false)
@@ -169,25 +175,48 @@ function AppContent() {
   const addBooking = async (booking) => {
     setSubmitting(true)
     const { id, ...bookingWithoutId } = booking
+    const sessionId = booking.session_id || activeSession?.id || null
+
+    // Concurrency / Conflict Check: Fetch latest bookings for this session and week
     try {
-      const { data: allRefs } = await supabase.from(BOOKING_TABLE).select('booking_ref')
-      let maxNum = 100
-      if (allRefs && allRefs.length) {
-        const refs = allRefs.map(r => parseInt(String(r.booking_ref || '').replace('BK-',''), 10)).filter(n => !isNaN(n))
-        if (refs.length) maxNum = Math.max(...refs)
+      const { data: existingForWeek } = await supabase
+        .from('bookings')
+        .select('id, name, week, beat_allocations')
+        .eq('session_id', sessionId)
+        .eq('week', booking.week)
+
+      if (existingForWeek && booking.beat_allocations) {
+        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        for (const existing of existingForWeek) {
+          if (!existing.beat_allocations) continue
+          for (const [dayIndex, requestedBeat] of Object.entries(booking.beat_allocations)) {
+            const occupiedBeat = existing.beat_allocations[dayIndex]
+            if (occupiedBeat && occupiedBeat === requestedBeat) {
+              const dayName = dayNames[parseInt(dayIndex)] || `Day ${parseInt(dayIndex) + 1}`
+              toastError(`⚠️ Slot Conflict: ${requestedBeat} on ${dayName} is already booked. Please select a different beat.`)
+              setSubmitting(false)
+              await fetchBookings(activeSession?.id)
+              return
+            }
+          }
+        }
       }
-      const nextNum = maxNum + 1
-      const bookingRef = `BK-${String(nextNum).padStart(5, '0')}`
-      localStorage.setItem('last_bk_ref', String(nextNum))
+    } catch (checkErr) {
+      console.warn('Conflict pre-check notice:', checkErr)
+    }
+
+    let bookingRef
+    try {
+      bookingRef = generateRandomBookingRef()
     } catch (e) {
       console.error('Sequence error', e)
-      toastError('Booking sequence failed.')
+      toastError('Booking reference generation failed.')
       setSubmitting(false)
       return
     }
     const bookingData = {
       ...bookingWithoutId,
-      session_id: booking.session_id || activeSession?.id || null,
+      session_id: sessionId,
       booking_ref: bookingRef
     }
 
@@ -207,14 +236,11 @@ function AppContent() {
     try {
       await emailService.sendBookingConfirmation({
         ...bookingData,
-        id: id || Date.now(), // Use temp ID if not yet available
+        id: id || Date.now(),
         email: booking.email
       })
-      // Note: In a real app, you might want to handle email errors differently
-      // For now, we'll log but not fail the booking if email fails
     } catch (emailError) {
       console.warn('Email sending failed (but booking saved):', emailError)
-      // We don't fail the booking if email fails
     }
 
     await fetchBookings(activeSession?.id)
@@ -222,10 +248,40 @@ function AppContent() {
     setEditingBooking(null)
     setCurrentView('dashboard')
     success('Booking created successfully! Confirmation email sent.')
+    return { ...bookingData, id: id || Date.now() }
   }
 
   const updateBooking = async (updatedBooking) => {
     setSubmitting(true)
+
+    // Concurrency / Conflict Check for Updates
+    try {
+      const { data: existingForWeek } = await supabase
+        .from('bookings')
+        .select('id, name, week, beat_allocations')
+        .eq('session_id', updatedBooking.session_id || activeSession?.id)
+        .eq('week', updatedBooking.week)
+
+      if (existingForWeek && updatedBooking.beat_allocations) {
+        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        for (const existing of existingForWeek) {
+          if (String(existing.id) === String(updatedBooking.id) || !existing.beat_allocations) continue
+          for (const [dayIndex, requestedBeat] of Object.entries(updatedBooking.beat_allocations)) {
+            const occupiedBeat = existing.beat_allocations[dayIndex]
+            if (occupiedBeat && occupiedBeat === requestedBeat) {
+              const dayName = dayNames[parseInt(dayIndex)] || `Day ${parseInt(dayIndex) + 1}`
+              toastError(`⚠️ Slot Conflict: ${requestedBeat} on ${dayName} is already booked by another angler.`)
+              setSubmitting(false)
+              await fetchBookings(activeSession?.id)
+              return
+            }
+          }
+        }
+      }
+    } catch (checkErr) {
+      console.warn('Conflict pre-check notice:', checkErr)
+    }
+
     const { error: updateError } = await supabase
       .from('bookings')
       .update({
@@ -254,11 +310,8 @@ function AppContent() {
         id: updatedBooking.id,
         email: updatedBooking.email
       })
-      // Note: In a real app, you might want to handle email errors differently
-      // For now, we'll log but not fail the booking if email fails
     } catch (emailError) {
       console.warn('Email sending failed (but booking updated):', emailError)
-      // We don't fail the booking if email fails
     }
 
     await fetchBookings(activeSession?.id)
@@ -383,12 +436,17 @@ function AppContent() {
 
   const handleLogin = () => {
     setIsAuthenticated(true)
+    setCurrentMode('admin')
+    success('Welcome to Fishery Management')
   }
 
   const handleLogout = () => {
     setIsAuthenticated(false)
+    localStorage.removeItem('fishing_admin_auth')
+    sessionStorage.removeItem('fishing_admin_auth')
     setCurrentMode('user')
     setCurrentView('dashboard')
+    info('Logged out of Admin Portal')
   }
 
   if (currentMode === 'user') {

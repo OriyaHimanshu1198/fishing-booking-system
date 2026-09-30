@@ -1,12 +1,27 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Search, Filter, ChevronDown, ChevronUp, X, Download, Printer } from 'lucide-react'
-import { BEATS } from '../utils/dateHelpers'
+import {
+  Search,
+  Filter,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Download,
+  Calendar,
+  Sparkles,
+  MapPin,
+  Pencil,
+  Trash2,
+  Users,
+  FileSpreadsheet
+} from 'lucide-react'
+import { BEATS, formatDate } from '../utils/dateHelpers'
 import jsPDF from 'jspdf'
 
 const ITEMS_PER_PAGE = 10
 
-function ViewBookings({ bookings, sessions, onDeleteBooking, onEditBooking }) {
+function ViewBookings({ bookings = [], sessions = [], onDeleteBooking, onEditBooking }) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [filterBookingId, setFilterBookingId] = useState('')
   const [selectedSession, setSelectedSession] = useState('all')
   const [selectedWeek, setSelectedWeek] = useState('all')
   const [selectedBeat, setSelectedBeat] = useState('all')
@@ -16,14 +31,14 @@ function ViewBookings({ bookings, sessions, onDeleteBooking, onEditBooking }) {
   const [showFilters, setShowFilters] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
 
-  // Reset page when filters/search change
+  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, selectedSession, selectedWeek, selectedBeat])
+  }, [searchQuery, filterBookingId, selectedSession, selectedWeek, selectedBeat])
 
-  // Get unique weeks from bookings
+  // Unique weeks available in the dataset
   const uniqueWeeks = useMemo(() => {
-    const weeks = [...new Set(bookings.map(b => b.week))].sort((a, b) => a - b)
+    const weeks = [...new Set(bookings.map((b) => b.week))].filter(Boolean).sort((a, b) => a - b)
     return weeks
   }, [bookings])
 
@@ -31,29 +46,47 @@ function ViewBookings({ bookings, sessions, onDeleteBooking, onEditBooking }) {
   const filteredBookings = useMemo(() => {
     let result = [...bookings]
 
+    if (filterBookingId.trim()) {
+      const targetId = filterBookingId.toLowerCase().trim().replace(/^(bk-|#)/i, '')
+      result = result.filter((b) => {
+        const refMatch = b.booking_ref && b.booking_ref.toLowerCase().includes(targetId)
+        const idMatch = String(b.id || '').toLowerCase().includes(targetId)
+        const formattedId = b.id ? `bk-${String(b.id).padStart(5, '0')}` : ''
+        const formattedMatch = formattedId.includes(targetId)
+        return refMatch || idMatch || formattedMatch
+      })
+    }
+
     if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter(b =>
-        b.name?.toLowerCase().includes(query) ||
-        b.email?.toLowerCase().includes(query) ||
-        b.phone?.toLowerCase().includes(query)
-      )
+      const query = searchQuery.toLowerCase().trim()
+      const cleanNum = query.replace(/^(bk-|#)/i, '')
+      result = result.filter((b) => {
+        const refMatch = b.booking_ref && b.booking_ref.toLowerCase().includes(query)
+        const nameMatch = b.name && b.name.toLowerCase().includes(query)
+        const emailMatch = b.email && b.email.toLowerCase().includes(query)
+        const phoneMatch = b.phone && b.phone.toLowerCase().includes(query)
+        const idMatch = String(b.id || '') === cleanNum || String(b.id || '').includes(cleanNum)
+        const formattedId = b.id ? `bk-${String(b.id).padStart(5, '0')}` : ''
+        const formattedMatch = formattedId.includes(query) || formattedId.includes(cleanNum)
+
+        return refMatch || nameMatch || emailMatch || phoneMatch || idMatch || formattedMatch
+      })
     }
 
     if (selectedSession !== 'all') {
-      result = result.filter(b => b.session_id === selectedSession)
+      result = result.filter((b) => b.session_id === selectedSession)
     }
 
     if (selectedWeek !== 'all') {
-      result = result.filter(b => b.week === Number(selectedWeek))
+      result = result.filter((b) => b.week === Number(selectedWeek))
     }
 
     if (selectedBeat !== 'all') {
-      result = result.filter(b => {
+      result = result.filter((b) => {
         if (b.beat_allocations) {
           return Object.values(b.beat_allocations).includes(selectedBeat)
         }
-        return false
+        return b.beat === selectedBeat
       })
     }
 
@@ -64,14 +97,10 @@ function ViewBookings({ bookings, sessions, onDeleteBooking, onEditBooking }) {
       if (sortField === 'created_at') {
         aVal = new Date(aVal || 0)
         bVal = new Date(bVal || 0)
-      }
-
-      if (sortField === 'week') {
+      } else if (sortField === 'week') {
         aVal = Number(aVal || 0)
         bVal = Number(bVal || 0)
-      }
-
-      if (sortField === 'name') {
+      } else if (sortField === 'name') {
         aVal = (aVal || '').toLowerCase()
         bVal = (bVal || '').toLowerCase()
       }
@@ -98,437 +127,462 @@ function ViewBookings({ bookings, sessions, onDeleteBooking, onEditBooking }) {
   }
 
   const getSessionName = (sessionId) => {
-    const session = sessions?.find(s => s.id === sessionId)
-    return session?.name || 'Unknown Session'
-  }
-
-  const getBeatDescription = (booking) => {
-    if (booking.beat_allocations) {
-      const beats = [...new Set(Object.values(booking.beat_allocations))]
-      if (beats.length === 1) return beats[0]
-      return beats.join(', ')
-    }
-    return booking.beat || 'N/A'
+    const session = sessions?.find((s) => s.id === sessionId)
+    return session?.name || 'Active Season'
   }
 
   const getDaysDescription = (booking) => {
     if (booking.beat_allocations) {
-      return Object.keys(booking.beat_allocations).length
+      const days = Object.keys(booking.beat_allocations).length
+      return `${days} ${days === 1 ? 'day' : 'days'}`
     }
-    return booking.days_count || 0
+    return `${booking.days_count || 1} ${booking.days_count === 1 ? 'day' : 'days'}`
   }
 
-  const generateBookingPdf = (booking) => {
-    const doc = new jsPDF();
-    const sessionName = getSessionName(booking.session_id);
+  const getBeatsSummary = (booking) => {
+    if (booking.beat_allocations) {
+      const unique = [...new Set(Object.values(booking.beat_allocations))]
+      if (unique.length === 1) return unique[0]
+      return `${unique.length} beats assigned`
+    }
+    return booking.beat || 'N/A'
+  }
 
-    // Set up the PDF
-    doc.setFontSize(20);
-    doc.text('Booking Confirmation', 105, 20, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text(`Name: ${booking.name || 'N/A'}`, 20, 30);
-    doc.text(`Email: ${booking.email || 'N/A'}`, 20, 40);
-    doc.text(`Phone: ${booking.phone || 'N/A'}`, 20, 50);
-    doc.text(`Week: ${booking.week}`, 20, 60);
-    doc.text(`Days: ${getDaysDescription(booking)}`, 20, 70);
-    doc.text(`Type: ${booking.booking_type === 'consecutive' ? 'Auto' : 'Flexible'}`, 20, 80);
-    doc.text(`Beat/Loch: ${getBeatDescription(booking)}`, 20, 90);
-    doc.text(`Season: ${sessionName}`, 20, 100);
-    doc.text(`Booked On: ${booking.created_at ? new Date(booking.created_at).toLocaleDateString() : 'N/A'}`, 20, 110);
+  // Generate High-Res PDF Pass
+  const handleDownloadPdf = (booking) => {
+    try {
+      const doc = new jsPDF()
+      doc.setFontSize(20)
+      doc.setTextColor(5, 150, 105)
+      doc.text('Fishing Rod Permit & Confirmation', 14, 22)
 
-    // Save the PDF
-    doc.save(`booking-${booking.id || new Date().getTime()}.pdf`);
-  };
+      doc.setFontSize(10)
+      doc.setTextColor(100)
+      doc.text(`Booking Ref: ${booking.booking_ref || (booking.id ? 'BK-' + String(booking.id).padStart(5, '0') : 'BK-00001')}`, 14, 30)
+      doc.text(`Date Issued: ${new Date().toLocaleDateString('en-GB')}`, 14, 36)
 
-  const handlePdfExport = (booking) => {
-    generateBookingPdf(booking);
-  };
+      doc.setDrawColor(200)
+      doc.line(14, 40, 196, 40)
+
+      doc.setFontSize(12)
+      doc.setTextColor(30)
+      doc.text(`Guest: ${booking.name}`, 14, 50)
+      doc.text(`Email: ${booking.email || 'N/A'}`, 14, 58)
+      doc.text(`Phone: ${booking.phone || 'N/A'}`, 14, 66)
+      doc.text(`Season: ${getSessionName(booking.session_id)}`, 14, 74)
+      doc.text(`Week Number: Week ${booking.week}`, 14, 82)
+      doc.text(`Days Booked: ${booking.days_count || 1} day(s)`, 14, 90)
+      doc.text(`Booking Mode: ${booking.booking_type === 'consecutive' ? 'Consecutive Fair Rotation' : 'Flexible Selection'}`, 14, 98)
+
+      doc.line(14, 106, 196, 106)
+      doc.setFontSize(14)
+      doc.text('Daily Beat Allocations', 14, 116)
+
+      let y = 126
+      const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      if (booking.beat_allocations) {
+        Object.entries(booking.beat_allocations).forEach(([dayIdx, beat]) => {
+          const dName = dayNames[Number(dayIdx)] || `Day ${Number(dayIdx) + 1}`
+          doc.setFontSize(10)
+          doc.text(`${dName}:`, 20, y)
+          doc.text(`${beat}`, 80, y)
+          y += 7
+        })
+      }
+
+      doc.setFontSize(9)
+      doc.setTextColor(120)
+      doc.text('Anglers must observe local catch & release bylaws and carry a valid photo ID.', 14, y + 16)
+
+      doc.save(`Permit-Week-${booking.week}-${booking.name.replace(/\s+/g, '_')}.pdf`)
+    } catch (err) {
+      console.error('PDF export failed:', err)
+    }
+  }
+
+  // Export Filtered Bookings as CSV
+  const handleCsvExport = () => {
+    if (!filteredBookings.length) return
+    const headers = ['Ref', 'Name', 'Email', 'Phone', 'Week', 'Days', 'Type', 'Season', 'Beat Allocations']
+    const rows = filteredBookings.map((b) => [
+      b.booking_ref || b.id,
+      `"${b.name || ''}"`,
+      b.email || '',
+      `"${b.phone || ''}"`,
+      b.week,
+      b.days_count || 1,
+      b.booking_type,
+      `"${getSessionName(b.session_id)}"`,
+      `"${b.beat_allocations ? Object.values(b.beat_allocations).join('; ') : b.beat || ''}"`
+    ])
+
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `Angler_Bookings_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
 
   const clearFilters = () => {
     setSearchQuery('')
+    setFilterBookingId('')
     setSelectedSession('all')
     setSelectedWeek('all')
     setSelectedBeat('all')
   }
 
-  const hasActiveFilters = searchQuery || selectedSession !== 'all' || selectedWeek !== 'all' || selectedBeat !== 'all'
-
-  const renderSortIcon = (field) => {
-    if (sortField !== field) return null
-    return sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-  }
-
-  const activeFilterCount = [searchQuery, selectedSession !== 'all', selectedWeek !== 'all', selectedBeat !== 'all'].filter(Boolean).length
+  const hasActiveFilters = searchQuery || filterBookingId || selectedSession !== 'all' || selectedWeek !== 'all' || selectedBeat !== 'all'
+  const activeFilterCount = [searchQuery, filterBookingId, selectedSession !== 'all', selectedWeek !== 'all', selectedBeat !== 'all'].filter(Boolean).length
 
   // Pagination
-  const totalPages = Math.ceil(filteredBookings.length / ITEMS_PER_PAGE)
-  const paginatedBookings = filteredBookings.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(filteredBookings.length / ITEMS_PER_PAGE) || 1
+  const paginatedBookings = filteredBookings.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
 
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return
     setCurrentPage(page)
   }
 
-  const handleCsvExport = () => {
-    const headers = ['Name', 'Email', 'Phone', 'Week', 'Days', 'Type', 'Beat/Loch', 'Season', 'Booked On']
-    const rows = filteredBookings.map((b) => [
-      b.name || '',
-      b.email || '',
-      b.phone || '',
-      `Week ${b.week}`,
-      getDaysDescription(b),
-      b.booking_type === 'consecutive' ? 'Auto' : 'Flexible',
-      getBeatDescription(b),
-      getSessionName(b.session_id),
-      b.created_at ? new Date(b.created_at).toLocaleDateString() : '',
-    ])
-    const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `bookings-${new Date().toISOString().slice(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    URL.revokeObjectURL(url)
+  const renderSortIcon = (field) => {
+    if (sortField !== field) return null
+    return sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div className="space-y-6 animate-fade-in">
+      {/* Header & Controls Bar */}
+      <div className="neu-raised rounded-3xl p-6 sm:p-8 space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">
+              All Angler Bookings
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              Showing {filteredBookings.length} of {bookings.length} reservations
+              {hasActiveFilters && ' (filtered)'}
+            </p>
+          </div>
 
-      {/* Header + Search */}
-      <div className="neu-table-wrapper animate-fade-in">
-        <div className="neu-table-header">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-            <div>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-dark)' }}>
-                All Bookings
-              </h2>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                {filteredBookings.length} of {bookings.length} bookings
-                {hasActiveFilters && ' (filtered)'}
-              </p>
-            </div>
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`neu-btn ${showFilters ? 'neu-btn-primary' : 'neu-btn-ghost'}`}
-              style={{ fontSize: '0.8rem' }}
+              className={`neu-btn px-4 py-2.5 flex items-center gap-1.5 text-xs font-semibold ${
+                showFilters || activeFilterCount > 0 ? 'neu-btn-primary' : 'neu-btn-ghost'
+              }`}
             >
-              <Filter size={16} />
-              Filters
+              <Filter size={15} />
+              <span>Filter Options</span>
               {activeFilterCount > 0 && (
-                <span style={{
-                  background: 'var(--accent-teal)',
-                  color: '#fff',
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginLeft: '4px',
-                }}>
+                <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">
                   {activeFilterCount}
                 </span>
               )}
             </button>
+
             {filteredBookings.length > 0 && (
               <button
                 onClick={handleCsvExport}
-                className="neu-btn neu-btn-ghost"
-                style={{ fontSize: '0.8rem' }}
-                title="Export to CSV"
+                className="neu-btn neu-btn-ghost px-4 py-2.5 flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                title="Download CSV Spreadsheet"
               >
-                <Download size={16} />
-                Export CSV
-              </button>
-            )}
-          </div>
-
-          {/* Neumorphic Search Bar */}
-          <div className="neu-search-bar">
-            <Search className="neu-search-icon" size={18} />
-            <input
-              type="text"
-              placeholder="Search by name, email, or phone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="neu-search-input"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="neu-search-clear">
-                ✕
+                <Download size={15} />
+                <span>Export CSV</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Filter Options */}
+        {/* Search Input */}
+        <div className="relative">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by Booking ID (e.g. BK-00001 or #12), Guest Name, Email, or Phone..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-9 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+
+        {/* Expandable Filters Panel */}
         {showFilters && (
-          <div className="neu-section animate-fade-in" style={{ margin: '0 24px 24px', borderRadius: '14px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
-              {/* Session Filter */}
-              <div className="neu-form-group" style={{ marginBottom: 0 }}>
-                <label className="neu-form-label">Season</label>
-                <select
-                  value={selectedSession}
-                  onChange={(e) => setSelectedSession(e.target.value)}
-                  className="neu-form-input"
-                >
-                  <option value="all">All Seasons</option>
-                  {sessions?.map(session => (
-                    <option key={session.id} value={session.id}>
-                      {session.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Week Filter */}
-              <div className="neu-form-group" style={{ marginBottom: 0 }}>
-                <label className="neu-form-label">Week</label>
-                <select
-                  value={selectedWeek}
-                  onChange={(e) => setSelectedWeek(e.target.value)}
-                  className="neu-form-input"
-                >
-                  <option value="all">All Weeks</option>
-                  {uniqueWeeks.map(week => (
-                    <option key={week} value={week}>Week {week}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Beat Filter */}
-              <div className="neu-form-group" style={{ marginBottom: 0 }}>
-                <label className="neu-form-label">Beat/Loch</label>
-                <select
-                  value={selectedBeat}
-                  onChange={(e) => setSelectedBeat(e.target.value)}
-                  className="neu-form-input"
-                >
-                  <option value="all">All Beats</option>
-                  {BEATS.map(beat => (
-                    <option key={beat} value={beat}>{beat}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Clear Filters */}
-              <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="neu-btn neu-btn-danger"
-                    style={{ width: '100%', fontSize: '0.8rem' }}
-                  >
-                    <X size={14} />
-                    Clear Filters
-                  </button>
-                )}
-              </div>
+          <div className="p-4 rounded-2xl neu-inset grid grid-cols-1 sm:grid-cols-4 gap-3 pt-4 animate-fade-in text-xs">
+            {/* Direct Booking ID Filter */}
+            <div className="space-y-1">
+              <label className="font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                Booking ID / Ref
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. BK-00001 or 12"
+                value={filterBookingId}
+                onChange={(e) => setFilterBookingId(e.target.value)}
+                className="neu-form-input py-2 px-3 text-xs rounded-xl w-full"
+              />
             </div>
+
+            {/* Season Filter */}
+            <div className="space-y-1">
+              <label className="font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                Season
+              </label>
+              <select
+                value={selectedSession}
+                onChange={(e) => setSelectedSession(e.target.value)}
+                className="neu-form-input py-2 px-3 text-xs rounded-xl w-full"
+              >
+                <option value="all">All Seasons</option>
+                {sessions?.map((session) => (
+                  <option key={session.id} value={session.id}>
+                    {session.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Week Filter */}
+            <div className="space-y-1">
+              <label className="font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                Week
+              </label>
+              <select
+                value={selectedWeek}
+                onChange={(e) => setSelectedWeek(e.target.value)}
+                className="neu-form-input py-2 px-3 text-xs rounded-xl w-full"
+              >
+                <option value="all">All Weeks</option>
+                {uniqueWeeks.map((week) => (
+                  <option key={week} value={week}>
+                    Week {week}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Beat Filter */}
+            <div className="space-y-1">
+              <label className="font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                Beat / Loch
+              </label>
+              <select
+                value={selectedBeat}
+                onChange={(e) => setSelectedBeat(e.target.value)}
+                className="neu-form-input py-2 px-3 text-xs rounded-xl w-full"
+              >
+                <option value="all">All Beats & Loch</option>
+                {BEATS.map((beat) => (
+                  <option key={beat} value={beat}>
+                    {beat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {hasActiveFilters && (
+              <div className="sm:col-span-4 flex justify-end pt-2">
+                <button
+                  onClick={clearFilters}
+                  className="neu-btn neu-btn-danger px-3 py-1.5 text-xs flex items-center gap-1"
+                >
+                  <X size={13} />
+                  <span>Clear All Filters</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
 
       {/* Bookings Table */}
-      <div className="neu-table-wrapper animate-fade-in">
-        <div style={{ overflowX: 'auto' }}>
-          <table className="neu-table">
+      <div className="neu-raised rounded-3xl p-6 sm:p-8 space-y-4">
+        <div className="overflow-x-auto rounded-2xl neu-inset p-2">
+          <table className="w-full text-left border-collapse min-w-[780px]">
             <thead>
-              <tr>
+              <tr className="border-b border-slate-200 dark:border-slate-700 text-[11px] uppercase tracking-wider text-slate-500">
+                <th
+                  onClick={() => handleSort('booking_ref')}
+                  className="py-3 px-3 cursor-pointer select-none hover:text-emerald-600"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Ref</span>
+                    {renderSortIcon('booking_ref')}
+                  </div>
+                </th>
                 <th
                   onClick={() => handleSort('name')}
-                  style={{ cursor: 'pointer' }}
+                  className="py-3 px-3 cursor-pointer select-none hover:text-emerald-600"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    Name
+                  <div className="flex items-center gap-1">
+                    <span>Angler Name</span>
                     {renderSortIcon('name')}
                   </div>
                 </th>
-                <th>Contact</th>
+                <th className="py-3 px-3">Contact</th>
                 <th
                   onClick={() => handleSort('week')}
-                  style={{ cursor: 'pointer' }}
+                  className="py-3 px-3 cursor-pointer select-none hover:text-emerald-600"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    Week
+                  <div className="flex items-center gap-1">
+                    <span>Week</span>
                     {renderSortIcon('week')}
                   </div>
                 </th>
-                <th>Days</th>
-                <th>Type</th>
-                <th>Beat/Loch</th>
-                <th>Season</th>
-                <th
-                  onClick={() => handleSort('created_at')}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    Booked On
-                    {renderSortIcon('created_at')}
-                  </div>
-                </th>
-                <th>Actions</th>
+                <th className="py-3 px-3">Duration</th>
+                <th className="py-3 px-3">Season</th>
+                <th className="py-3 px-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
               {paginatedBookings.length === 0 ? (
                 <tr>
-                  <td colSpan="9">
-                    <div className="neu-empty">
-                      <div className="neu-empty-icon">🎣</div>
-                      <p style={{ fontWeight: 600 }}>
-                        {hasActiveFilters ? 'No bookings match your filters' : 'No bookings yet'}
-                      </p>
-                      {hasActiveFilters && (
-                        <button
-                          onClick={clearFilters}
-                          style={{
-                            marginTop: '8px',
-                            fontSize: '0.8rem',
-                            fontWeight: 600,
-                            color: 'var(--accent-teal)',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            textDecoration: 'underline',
-                          }}
-                        >
-                          Clear filters to see all bookings
-                        </button>
-                      )}
+                  <td colSpan={7} className="py-10 text-center text-slate-400">
+                    <div className="text-3xl mb-2">🎣</div>
+                    <div className="font-semibold text-sm">
+                      {hasActiveFilters ? 'No bookings match the selected filters' : 'No bookings recorded yet'}
                     </div>
+                    {hasActiveFilters && (
+                      <button
+                        onClick={clearFilters}
+                        className="mt-2 text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-semibold"
+                      >
+                        Reset filters to view all bookings
+                      </button>
+                    )}
                   </td>
                 </tr>
               ) : (
-                paginatedBookings.map((booking, index) => (
-                  <tr key={booking.id} className="animate-fade-in" style={{ animationDelay: `${index * 30}ms` }}>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <button
-                          onClick={() => toggleExpand(booking.id)}
-                          className="neu-btn neu-btn-ghost"
-                          style={{ padding: '4px', minWidth: 'auto' }}
-                        >
-                          {expandedBooking === booking.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                        </button>
-                        <div>
-                          <div style={{ fontWeight: 600, color: 'var(--text-dark)' }}>{booking.name}</div>
-                          {expandedBooking === booking.id && (
-                            <div style={{ fontSize: '0.65rem', color: 'var(--text-light)', marginTop: '2px' }}>
-                              ID: {booking.id}
-                            </div>
-                          )}
-                          {expandedBooking === booking.id && (
-                            <div style={{ marginTop: '8px' }}>
-                              <button
-                                onClick={() => handlePdfExport(booking)}
-                                className="neu-btn neu-btn-primary"
-                                style={{
-                                  width: '100%',
-                                  fontSize: '0.75rem',
-                                  padding: '6px 12px'
-                                }}
-                              >
-                                <Printer size={16} />
-                                Download PDF
-                              </button>
-                            </div>
-                          )}
+                paginatedBookings.map((b) => {
+                  const isExpanded = expandedBooking === b.id
+                  return (
+                    <tr key={b.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                      <td className="py-3 px-3 font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        {b.booking_ref || (b.id ? 'BK-' + String(b.id).padStart(5, '0') : '-')}
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => toggleExpand(b.id)}
+                            className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                            title={isExpanded ? 'Collapse' : 'Expand daily beats'}
+                          >
+                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </button>
+                          <div>
+                            <div className="font-bold text-slate-800 dark:text-slate-200">{b.name}</div>
+                            {isExpanded && b.beat_allocations && (
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-2.5 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-[11px] animate-fade-in">
+                                {Object.entries(b.beat_allocations).map(([dayIdx, beat]) => {
+                                  const dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][Number(dayIdx)] || `Day ${dayIdx}`
+                                  return (
+                                    <div key={dayIdx} className="bg-white/80 dark:bg-black/30 p-1.5 rounded-md">
+                                      <span className="font-bold text-slate-500">{dayName}: </span>
+                                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{beat}</span>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-dark)' }}>{booking.email || '-'}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{booking.phone}</div>
-                    </td>
-                    <td>
-                      <span className="badge badge-blue">Week {booking.week}</span>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-dark)' }}>{getDaysDescription(booking)} days</span>
-                    </td>
-                    <td>
-                      <span className={`badge ${booking.booking_type === 'consecutive' ? 'badge-purple' : 'badge-pink'}`}>
-                        {booking.booking_type === 'consecutive' ? 'Auto' : 'Flexible'}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="badge badge-green">{getBeatDescription(booking)}</span>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                        {getSessionName(booking.session_id)}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        {booking.created_at ? new Date(booking.created_at).toLocaleDateString() : '-'}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <button
-                          onClick={() => onEditBooking(booking)}
-                          className="neu-btn neu-btn-ghost neu-btn-sm"
-                          title="Edit"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => onDeleteBooking(booking.id)}
-                          className="neu-btn neu-btn-danger neu-btn-sm"
-                          title="Delete"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="text-slate-700 dark:text-slate-300">{b.email || '-'}</div>
+                        <div className="text-[10px] text-slate-400">{b.phone}</div>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                          Week {b.week}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                          {getDaysDescription(b)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-slate-500">
+                        {getSessionName(b.session_id)}
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleDownloadPdf(b)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+                            title="Download PDF Pass"
+                          >
+                            <Download size={15} />
+                          </button>
+                          <button
+                            onClick={() => onEditBooking(b)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
+                            title="Edit Booking"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            onClick={() => onDeleteBooking(b.id)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                            title="Delete Booking"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
         </div>
 
-        {/* Footer Stats */}
-        {filteredBookings.length > 0 && (
-          <div className="neu-table-footer">
-            <span>Total: {filteredBookings.length} bookings</span>
-            <span style={{ display: 'flex', gap: '16px' }}>
-              <span>Auto: {filteredBookings.filter(b => b.booking_type === 'consecutive').length}</span>
-              <span>Flexible: {filteredBookings.filter(b => b.booking_type === 'flexible').length}</span>
-            </span>
+        {/* Footer Summary & Pagination */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-slate-500 border-t border-slate-200 dark:border-slate-800">
+          <div>
+            Total: <strong>{filteredBookings.length}</strong> bookings (
+            {filteredBookings.filter((b) => b.booking_type === 'consecutive').length} Consecutive,{' '}
+            {filteredBookings.filter((b) => b.booking_type === 'flexible').length} Flexible)
           </div>
-        )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="neu-pagination">
-            <button
-              className="neu-page-btn"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              ← Prev
-            </button>
-            <div className="neu-page-info">
-              Page {currentPage} of {totalPages}
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400">
+                Page {currentPage} of {totalPages}
+              </span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  Next
+                </button>
+              </div>
             </div>
-            <button
-              className="neu-page-btn"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Next →
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )

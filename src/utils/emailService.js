@@ -5,49 +5,24 @@ import axios from 'axios';
 
 export const emailService = {
   // Daily counter for rate limiting (stays in memory - resets on page refresh)
-  // For production, you might want to use localStorage or a server-side counter
   _dailyEmailCount: 0,
   _lastResetDate: new Date().toDateString(),
   _isApiKeyInvalid: false,
 
   /**
-   * Initialize Brevo HTTP client
-   * @returns {AxiosInstance|null} - Axios instance or null if not configured
+   * Get Brevo API Key
    */
-  _getBrevoClient() {
-    if (this._isApiKeyInvalid) {
-      return null;
-    }
+  _getApiKey() {
+    const key = import.meta.env.VITE_BREVO_API_KEY || import.meta.env.BREVO_API_KEY || '';
+    return typeof key === 'string' ? key.trim() : '';
+  },
 
-    const apiKey = import.meta.env.VITE_BREVO_API_KEY;
-    if (!apiKey || typeof apiKey !== 'string' || apiKey.trim() === '' || apiKey.includes('placeholder')) {
-      // Console warning only once per session to avoid spam
-      if (typeof window !== 'undefined' && !window._brevoWarningShown) {
-        console.info('[Email Service] Brevo API key not configured - using mock mode for development');
-        window._brevoWarningShown = true;
-      }
-      return null;
-    }
-
-    const trimmedKey = apiKey.trim();
-    // Brevo v3 API keys start with xkeysib-
-    if (!trimmedKey.startsWith('xkeysib-')) {
-      if (typeof window !== 'undefined' && !window._brevoWarningShown) {
-        console.warn('[Email Service] Brevo API key is not a valid v3 key (must start with xkeysib-) - using mock mode');
-        window._brevoWarningShown = true;
-      }
-      return null;
-    }
-
-    return axios.create({
-      baseURL: 'https://api.brevo.com/v3',
-      headers: {
-        'api-key': trimmedKey,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      timeout: 10000 // 10 second timeout
-    });
+  /**
+   * Get Verified Sender Email
+   */
+  _getSenderEmail() {
+    const sender = import.meta.env.VITE_BREVO_SENDER_EMAIL || import.meta.env.BREVO_SENDER_EMAIL || 'oriyahimanshu.work@gmail.com';
+    return typeof sender === 'string' ? sender.trim() : 'oriyahimanshu.work@gmail.com';
   },
 
   /**
@@ -83,93 +58,126 @@ export const emailService = {
   },
 
   /**
-   * Send booking confirmation email via Brevo
-   * @param {Object} bookingData - The booking information
-   * @returns {Promise<Object>} - Result of email sending operation
+   * Internal method to dispatch email to Brevo (Direct API or Proxy)
    */
-  async sendBookingConfirmation(bookingData) {
+  async _sendEmail(payload, bookingData, type = 'confirmation') {
+    const apiKey = this._getApiKey();
+    const proxyToken = import.meta.env.VITE_BREVO_PROXY_TOKEN || import.meta.env.BREVO_PROXY_TOKEN || '';
+
+    // Check if API key is present and valid
+    if (!apiKey || this._isApiKeyInvalid || apiKey.includes('placeholder') || !apiKey.startsWith('xkeysib-')) {
+      console.warn(`[Email Service] Valid Brevo API key not found. Using mock mode for ${type}.`);
+      return this._mockSend(bookingData, type);
+    }
+
+    // Ensure payload has the correct sender
+    payload.sender = {
+      name: "Fishing Booking System",
+      email: this._getSenderEmail()
+    };
+
+    // 1. Try Direct Brevo API first
     try {
-      // Check daily limit first
-      if (!this._checkDailyLimit()) {
-        // Queue for tomorrow - in a real app you'd save to database
-        console.log('[Email Service] Queuing confirmation email for tomorrow due to daily limit');
-        return {
-          success: true, // Still return success so booking isn't blocked
-          queued: true,
-          message: `Email queued for tomorrow (daily limit reached)`,
-          timestamp: new Date().toISOString()
-        };
-      }
-
-      const client = this._getBrevoClient();
-
-      // Fallback to mock if no API key (for development)
-      if (!client) {
-        return this._mockSend(bookingData, 'confirmation');
-      }
-
-      // Prepare email payload for Brevo
-      const emailPayload = {
-        sender: {
-          name: "Fishing Booking System",
-          email: import.meta.env.VITE_BREVO_SENDER_EMAIL || "bookings@yourdomain.com"
+      const response = await axios.post('https://api.brevo.com/v3/smtp/email', payload, {
+        headers: {
+          'api-key': apiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        to: [{ email: bookingData.email, name: bookingData.name }],
-        subject: `🎣 Fishing Booking Confirmed - Week ${bookingData.week}`,
-        htmlContent: this._getConfirmationTemplate(bookingData),
-        params: {
-          role: "Angler",
-          booking_id: bookingData.id || 'TEMP-' + Date.now(),
-          week_number: bookingData.week,
-          days_count: bookingData.days_count,
-          booking_type: bookingData.booking_type === 'consecutive' ? 'Consecutive Days' : 'Flexible Booking'
-        }
-      };
+        timeout: 12000
+      });
 
-      // Send email via Brevo API
-      const response = await client.post('/smtp/email', emailPayload);
-
-      // Update daily counter on success
       this._incrementDailyCount();
-
-      console.log('[Email Service] Brevo confirmation sent successfully:', {
-        messageId: response.data.messageId,
-        to: bookingData.email,
+      console.log(`[Email Service] Brevo ${type} email sent successfully:`, {
+        messageId: response.data?.messageId,
+        to: payload.to?.[0]?.email,
         dailyCount: this._dailyEmailCount
       });
 
       return {
         success: true,
-        messageId: response.data.messageId,
+        messageId: response.data?.messageId,
         timestamp: new Date().toISOString(),
         queued: false
       };
-    } catch (error) {
-      const status = error.response?.status;
-      const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+    } catch (directError) {
+      const status = directError.response?.status;
+      const errorMsg = directError.response?.data?.message || directError.message || 'Direct Brevo API error';
 
       if (status === 401 || errorMsg.includes('Key not found') || errorMsg.includes('unauthorized')) {
         this._isApiKeyInvalid = true;
-        console.warn('[Email Service] Brevo API key is not active or unauthorized (401 Key not found). Switched to mock email mode.');
-        return this._mockSend(bookingData, 'confirmation');
+        console.warn('[Email Service] Brevo API key unauthorized (401). Falling back to mock mode:', errorMsg);
+        return this._mockSend(bookingData, type);
       }
 
-      // Check if it's a rate limit error from Brevo (HTTP 429)
       if (status === 429) {
-        console.warn('[Email Service] Brevo daily limit reached - queuing for tomorrow');
-        // In production, you'd save to a database queue here
+        console.warn('[Email Service] Brevo daily limit reached (429)');
         return {
-          success: true, // Don't block the booking
+          success: true,
           queued: true,
-          message: `Daily limit reached with Brevo - email queued for tomorrow`,
+          message: 'Daily limit reached - email queued for tomorrow',
           timestamp: new Date().toISOString()
         };
       }
 
-      // For other errors, fallback to mock to avoid breaking the booking flow
-      console.warn('[Email Service] Brevo delivery failed, using mock mode:', errorMsg);
-      return this._mockSend(bookingData, 'confirmation');
+      // 2. If direct call failed (e.g. CORS), try local proxy server if running
+      try {
+        console.log('[Email Service] Trying local proxy on port 3004...');
+        const proxyResponse = await axios.post('http://localhost:3004/send-email', payload, {
+          headers: {
+            'Authorization': `Bearer ${proxyToken}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 8000
+        });
+
+        this._incrementDailyCount();
+        console.log(`[Email Service] Email sent via proxy:`, proxyResponse.data);
+        return {
+          success: true,
+          messageId: proxyResponse.data?.messageId,
+          timestamp: new Date().toISOString(),
+          queued: false
+        };
+      } catch (proxyError) {
+        console.warn('[Email Service] Proxy attempt also failed:', proxyError.response?.data?.error || proxyError.message);
+      }
+
+      console.warn(`[Email Service] ${type} delivery failed (${errorMsg}), using mock mode fallback.`);
+      return this._mockSend(bookingData, type);
     }
+  },
+
+  /**
+   * Send booking confirmation email via Brevo
+   * @param {Object} bookingData - The booking information
+   * @returns {Promise<Object>} - Result of email sending operation
+   */
+  async sendBookingConfirmation(bookingData) {
+    if (!this._checkDailyLimit()) {
+      console.log('[Email Service] Queuing confirmation email for tomorrow due to daily limit');
+      return {
+        success: true,
+        queued: true,
+        message: 'Email queued for tomorrow (daily limit reached)',
+        timestamp: new Date().toISOString()
+      };
+    }
+
+    const emailPayload = {
+      to: [{ email: bookingData.email, name: bookingData.name }],
+      subject: `🎣 Fishing Booking Confirmed - Week ${bookingData.week}`,
+      htmlContent: this._getConfirmationTemplate(bookingData),
+      params: {
+        role: "Angler",
+        booking_id: bookingData.id || 'TEMP-' + Date.now(),
+        week_number: bookingData.week,
+        days_count: bookingData.days_count,
+        booking_type: bookingData.booking_type === 'consecutive' ? 'Consecutive Days' : 'Flexible Booking'
+      }
+    };
+
+    return this._sendEmail(emailPayload, bookingData, 'confirmation');
   },
 
   /**
@@ -178,147 +186,49 @@ export const emailService = {
    * @returns {Promise<Object>} - Result of email sending operation
    */
   async sendCancellationConfirmation(bookingData) {
-    try {
-      // Check daily limit first
-      if (!this._checkDailyLimit()) {
-        console.log('[Email Service] Queuing cancellation email for tomorrow due to daily limit');
-        return {
-          success: true,
-          queued: true,
-          message: `Email queued for tomorrow (daily limit reached)`,
-          timestamp: new Date().toISOString()
-        };
-      }
-
-      const client = this._getBrevoClient();
-
-      // Fallback to mock if no API key
-      if (!client) {
-        return this._mockSend(bookingData, 'cancellation');
-      }
-
-      // Prepare email payload for Brevo
-      const emailPayload = {
-        sender: {
-          name: "Fishing Booking System",
-          email: import.meta.env.VITE_BREVO_SENDER_EMAIL || "bookings@yourdomain.com"
-        },
-        to: [{ email: bookingData.email, name: bookingData.name }],
-        subject: `🎣 Fishing Booking Cancellation`,
-        htmlContent: this._getCancellationTemplate(bookingData)
-      };
-
-      // Send email via Brevo API
-      await client.post('/smtp/email', emailPayload);
-
-      // Update daily counter on success
-      this._incrementDailyCount();
-
+    if (!this._checkDailyLimit()) {
+      console.log('[Email Service] Queuing cancellation email for tomorrow due to daily limit');
       return {
         success: true,
-        timestamp: new Date().toISOString(),
-        queued: false
+        queued: true,
+        message: 'Email queued for tomorrow (daily limit reached)',
+        timestamp: new Date().toISOString()
       };
-    } catch (error) {
-      const status = error.response?.status;
-      const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
-
-      if (status === 401 || errorMsg.includes('Key not found') || errorMsg.includes('unauthorized')) {
-        this._isApiKeyInvalid = true;
-        console.warn('[Email Service] Brevo API key is not active or unauthorized (401 Key not found). Switched to mock email mode.');
-        return this._mockSend(bookingData, 'cancellation');
-      }
-
-      // Check for rate limit
-      if (status === 429) {
-        console.warn('[Email Service] Brevo daily limit reached for cancellation');
-        return {
-          success: true,
-          queued: true,
-          message: `Daily limit reached - cancellation email queued for tomorrow`,
-          timestamp: new Date().toISOString()
-        };
-      }
-
-      // Fallback to mock
-      console.warn('[Email Service] Brevo cancellation notice failed, using mock mode:', errorMsg);
-      return this._mockSend(bookingData, 'cancellation');
     }
+
+    const emailPayload = {
+      to: [{ email: bookingData.email, name: bookingData.name }],
+      subject: `🎣 Fishing Booking Cancellation`,
+      htmlContent: this._getCancellationTemplate(bookingData)
+    };
+
+    return this._sendEmail(emailPayload, bookingData, 'cancellation');
   },
 
   /**
-   * Send booking reminder email (placeholder for future implementation)
+   * Send booking reminder email
    * @param {Object} bookingData - The booking information
    * @param {String} daysUntil - Days until the booking
    * @returns {Promise<Object>} - Result of email sending operation
    */
   async sendBookingReminder(bookingData, daysUntil) {
-    try {
-      // Check daily limit first
-      if (!this._checkDailyLimit()) {
-        console.log('[Email Service] Queuing reminder email for tomorrow due to daily limit');
-        return {
-          success: true,
-          queued: true,
-          message: `Email queued for tomorrow (daily limit reached)`,
-          timestamp: new Date().toISOString()
-        };
-      }
-
-      const client = this._getBrevoClient();
-
-      // Fallback to mock if no API key
-      if (!client) {
-        return this._mockSend(bookingData, `reminder-${daysUntil}days`);
-      }
-
-      // Prepare email payload for Brevo
-      const emailPayload = {
-        sender: {
-          name: "Fishing Booking System",
-          email: import.meta.env.VITE_BREVO_SENDER_EMAIL || "bookings@yourdomain.com"
-        },
-        to: [{ email: bookingData.email, name: bookingData.name }],
-        subject: `⏰ Reminder: Your fishing booking is in ${daysUntil} day(s)`,
-        htmlContent: this._getReminderTemplate(bookingData, daysUntil)
-      };
-
-      // Send email via Brevo API
-      await client.post('/smtp/email', emailPayload);
-
-      // Update daily counter on success
-      this._incrementDailyCount();
-
+    if (!this._checkDailyLimit()) {
+      console.log('[Email Service] Queuing reminder email for tomorrow due to daily limit');
       return {
         success: true,
-        timestamp: new Date().toISOString(),
-        queued: false
+        queued: true,
+        message: 'Email queued for tomorrow (daily limit reached)',
+        timestamp: new Date().toISOString()
       };
-    } catch (error) {
-      const status = error.response?.status;
-      const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
-
-      if (status === 401 || errorMsg.includes('Key not found') || errorMsg.includes('unauthorized')) {
-        this._isApiKeyInvalid = true;
-        console.warn('[Email Service] Brevo API key is not active or unauthorized (401 Key not found). Switched to mock email mode.');
-        return this._mockSend(bookingData, `reminder-${daysUntil}days`);
-      }
-
-      // Check for rate limit
-      if (status === 429) {
-        console.warn('[Email Service] Brevo daily limit reached for reminder');
-        return {
-          success: true,
-          queued: true,
-          message: `Daily limit reached - reminder email queued for tomorrow`,
-          timestamp: new Date().toISOString()
-        };
-      }
-
-      // Fallback to mock
-      console.warn('[Email Service] Brevo reminder delivery failed, using mock mode:', errorMsg);
-      return this._mockSend(bookingData, `reminder-${daysUntil}days`);
     }
+
+    const emailPayload = {
+      to: [{ email: bookingData.email, name: bookingData.name }],
+      subject: `⏰ Reminder: Your fishing booking is in ${daysUntil} day(s)`,
+      htmlContent: this._getReminderTemplate(bookingData, daysUntil)
+    };
+
+    return this._sendEmail(emailPayload, bookingData, `reminder-${daysUntil}days`);
   },
 
   /**
@@ -337,7 +247,6 @@ export const emailService = {
       }
     });
 
-    // Simulate network delay for realism
     await new Promise(resolve => setTimeout(resolve, 800));
 
     return {
@@ -350,30 +259,36 @@ export const emailService = {
   },
 
   /**
+   * Escape HTML entities to prevent HTML injection / XSS in email clients
+   * @param {any} val - The value to escape
+   * @returns {string} - Escaped safe string
+   */
+  _escapeHtml(val) {
+    if (val === null || val === undefined) return '';
+    return String(val)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  },
+
+  /**
    * Get HTML template for booking confirmation email
    */
-  _getConfirmationTemplate: (booking) => {
+  _getConfirmationTemplate(booking) {
+    const esc = this._escapeHtml.bind(this);
+
     // Format beat allocations for display
     const beatInfo = booking.beat_allocations && Object.keys(booking.beat_allocations).length > 0
       ? Object.entries(booking.beat_allocations)
         .map(([dayIndex, beat]) => {
           const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
           const dayLabel = dayLabels[parseInt(dayIndex)] || `Day ${parseInt(dayIndex) + 1}`;
-          return `<li><strong>${dayLabel}:</strong> ${beat}</li>`;
+          return `<li><strong>${esc(dayLabel)}:</strong> ${esc(beat)}</li>`;
         })
         .join('')
       : '<li>No specific beat assignments (flexible booking)</li>';
-
-    // Format dates nicely
-    const _formatDate = (dateString) => {
-      if (!dateString) return 'Not set';
-      return new Date(dateString).toLocaleDateString('en-US', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    };
 
     return `
       <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
@@ -387,23 +302,23 @@ export const emailService = {
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Guest Name:</td>
-              <td style="padding: 8px 0;">${booking.name}</td>
+              <td style="padding: 8px 0;">${esc(booking.name)}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Email:</td>
-              <td style="padding: 8px 0;">${booking.email}</td>
+              <td style="padding: 8px 0;">${esc(booking.email)}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Phone:</td>
-              <td style="padding: 8px 0;">${booking.phone}</td>
+              <td style="padding: 8px 0;">${esc(booking.phone || 'Not provided')}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Booking Week:</td>
-              <td style="padding: 8px 0;">#${booking.week}</td>
+              <td style="padding: 8px 0;">#${esc(booking.week)}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Days Booked:</td>
-              <td style="padding: 8px 0;">${booking.days_count} day(s)</td>
+              <td style="padding: 8px 0;">${esc(booking.days_count)} day(s)</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Booking Type:</td>
@@ -419,8 +334,8 @@ export const emailService = {
             ${beatInfo}
           </ul>
           ${booking.booking_type === 'consecutive'
-            ? '<p style="font-size: 0.9em; color: #6c757d; margin-top: 10px;"><em>Note: As a consecutive booking, your beats/lochs rotate daily for fair distribution.</em></p>'
-            : '<p style="font-size: 0.9em; color: #6c757d; margin-top: 10px;"><em>Note: As a flexible booking, you selected your preferred beats/lochs for each day.</em></p>'}
+        ? '<p style="font-size: 0.9em; color: #6c757d; margin-top: 10px;"><em>Note: As a consecutive booking, your beats/lochs rotate daily for fair distribution.</em></p>'
+        : '<p style="font-size: 0.9em; color: #6c757d; margin-top: 10px;"><em>Note: As a flexible booking, you selected your preferred beats/lochs for each day.</em></p>'}
         </div>
 
         <div style="text-align: center; margin: 30px 0; padding-top: 20px; border-top: 1px solid #eee;">
@@ -445,7 +360,9 @@ export const emailService = {
   /**
    * Get HTML template for booking cancellation email
    */
-  _getCancellationTemplate: (booking) => {
+  _getCancellationTemplate(booking) {
+    const esc = this._escapeHtml.bind(this);
+
     return `
       <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 30px;">
@@ -458,27 +375,27 @@ export const emailService = {
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Guest Name:</td>
-              <td style="padding: 8px 0;">${booking.name}</td>
+              <td style="padding: 8px 0;">${esc(booking.name)}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Email:</td>
-              <td style="padding: 8px 0;">${booking.email}</td>
+              <td style="padding: 8px 0;">${esc(booking.email)}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Phone:</td>
-              <td style="padding: 8px 0;">${booking.phone}</td>
+              <td style="padding: 8px 0;">${esc(booking.phone || 'Not provided')}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Booking Week:</td>
-              <td style="padding: 8px 0;">#${booking.week}</td>
+              <td style="padding: 8px 0;">#${esc(booking.week)}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Days Booked:</td>
-              <td style="padding: 8px 0;">${booking.days_count} day(s)</td>
+              <td style="padding: 8px 0;">${esc(booking.days_count)} day(s)</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Cancelled On:</td>
-              <td style="padding: 8px 0;">${new Date().toLocaleDateString()}</td>
+              <td style="padding: 8px 0;">${esc(new Date().toLocaleDateString())}</td>
             </tr>
           </table>
         </div>
@@ -514,7 +431,8 @@ export const emailService = {
   /**
    * Get HTML template for booking reminder email
    */
-  _getReminderTemplate: (booking, daysUntil) => {
+  _getReminderTemplate(booking, daysUntil) {
+    const esc = this._escapeHtml.bind(this);
     const dayLabel = daysUntil === 1 ? 'day' : 'days';
     const urgency = daysUntil <= 1 ? 'Tomorrow!' : daysUntil <= 3 ? 'Soon!' : '';
 
@@ -522,32 +440,32 @@ export const emailService = {
       <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 30px;">
           <h1 style="color: #f39c12; margin: 0;">⏰ Fishing Booking Reminder</h1>
-          <p style="color: #7f8c8d; margin: 5px 0 0 0;">${urgency}</p>
+          <p style="color: #7f8c8d; margin: 5px 0 0 0;">${esc(urgency)}</p>
         </div>
 
         <div style="background: #fff8e1; border-left: 4px solid #ff9800; padding: 20px; margin: 25px 0;">
           <h2 style="color: #e65100; margin-top: 0;">Upcoming Booking</h2>
           <p style="margin-bottom: 15px;">
-            Hello <strong>${booking.name}</strong>, this is a friendly reminder that your
-            fishing booking is coming up in <strong>${daysUntil} ${dayLabel}</strong>!
+            Hello <strong>${esc(booking.name)}</strong>, this is a friendly reminder that your
+            fishing booking is coming up in <strong>${esc(daysUntil)} ${esc(dayLabel)}</strong>!
           </p>
 
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Guest Name:</td>
-              <td style="padding: 8px 0; width: 30%; font-weight: 600;">${booking.name}</td>
+              <td style="padding: 8px 0; width: 30%; font-weight: 600;">${esc(booking.name)}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Email:</td>
-              <td style="padding: 8px 0; width: 30%; font-weight: 600;">${booking.email}</td>
+              <td style="padding: 8px 0; width: 30%; font-weight: 600;">${esc(booking.email)}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Booking Week:</td>
-              <td style="padding: 8px 0; width: 30%; font-weight: 600;">#${booking.week}</td>
+              <td style="padding: 8px 0; width: 30%; font-weight: 600;">#${esc(booking.week)}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Days Booked:</td>
-              <td style="padding: 8px 0; width: 30%; font-weight: 600;">${booking.days_count} day(s)</td>
+              <td style="padding: 8px 0; width: 30%; font-weight: 600;">${esc(booking.days_count)} day(s)</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; width: 30%; font-weight: 600;">Booking Type:</td>

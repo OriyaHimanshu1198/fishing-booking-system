@@ -1,248 +1,161 @@
-# 🎣 Fishing Booking System
+# 🎣 Scottish Highland Fishery Booking System
 
-A comprehensive booking management system for fishing beats and loch, built with **React 19 + Vite 8 + Tailwind CSS 3 + Supabase**.
+An enterprise-grade, full-stack angling reservation and estate management platform built with **React 19 + Vite 8 + Tailwind CSS + Supabase (PostgreSQL with RLS) + Brevo Transactional Email**.
 
-![License](https://img.shields.io/badge/license-MIT-blue)
-![React](https://img.shields.io/badge/React-19-61DAFB)
-![Vite](https://img.shields.io/badge/Vite-8-646CFF)
-![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E)
-
-## ✨ Features
-
-### 🎨 Modern Neumorphic UI
-- Soft UI design with dual shadows and pastel gradients
-- Dark mode with `localStorage` persistence
-- Smooth animations and micro-interactions
-- Fully responsive design
-
-### 🔐 Admin Authentication
-- Secure login system
-- Session-based access control
-
-### 📊 Dashboard
-- **Real-time Statistics**: Total bookings, available slots, booked slots, total weeks
-- **Beat & Loch Usage**: Visual breakdown of all 6 resources (5 Beats + 1 Loch)
-- **Recent Bookings Table**: View and manage bookings with search and pagination
-- **Season Configuration**: Edit season start/end dates
-
-### 📅 Session/Season Management
-- Create and manage multiple fishing seasons
-- Switch between active and upcoming seasons
-- Season status badges (active, upcoming, completed)
-- Advance booking for upcoming seasons
-
-### 🎣 Smart Booking System
-
-**Two Booking Types:**
-
-| Type | Description |
-|------|-------------|
-| **Consecutive Days** | Auto-assigns different beats/lochs for each consecutive day |
-| **Flexible Booking** | User manually selects a specific beat/loch for each day |
-
-### 📋 View All Bookings
-- **Advanced Search**: Search by name, email, or phone
-- **Multi-filter**: Filter by season, week, or beat/loch
-- **Sortable columns**: Sort by name, week, or date
-- **Expandable rows**: View booking details
-- **Pagination**: 10 items per page
-- **CSV Export**: Download filtered bookings as CSV
-
-### 🖨️ Weekly View
-- 6-day grid (Monday through Saturday)
-- Beat-centric display with color-coded cells
-- Print-friendly layout
-
-### 🔔 UX Improvements
-- **Toast Notifications**: Success/error/info messages with auto-dismiss
-- **Confirm Modals**: Neumorphic confirmation dialogs replacing `confirm()`
-- **Click-outside Handler**: Dropdown closes when clicking outside
-- **Loading States**: Button spinners during form submissions
-- **Pagination**: Navigate through large booking lists
-
-### 📧 Email Service
-- Integrated email service for sending booking confirmations and notifications
-- Configured via environment variables
-- Located in `src/utils/emailService.js`
-
-## 📁 Project Structure
-
-```
-src/
-├── components/
-│   ├── BookingForm.jsx      # Smart booking form with auto-assignment
-│   ├── ConfirmModal.jsx     # Neumorphic confirmation dialog
-│   ├── Dashboard.jsx        # Statistics, season config, recent bookings
-│   ├── LoginForm.jsx        # Admin authentication
-│   ├── SessionSelector.jsx  # Season management cards
-│   ├── Toast.jsx            # Notification component
-│   ├── ToastContext.jsx     # Toast state management (React Context)
-│   ├── ViewBookings.jsx     # All bookings with search/filter/sort/pagination
-│   └── WeeklyView.jsx       # 6-day weekly grid view
-├── utils/
-│   ├── dateHelpers.js       # Date calculations and beat allocation logic
-│   └── emailService.js      # Email service for booking notifications
-├── App.jsx                  # Main application (routing, state, dark mode)
-├── App.css                  # Neumorphic design system + animations
-├── index.css                # Tailwind base styles
-├── main.jsx                 # Application entry point
-└── supabase.js              # Supabase client and API helpers
-├── .netlify/
-│   ├── netlify.toml         # Netlify build configuration and redirects
-│   └── state.json           # Netlify deployment state
-├── database/
-│   └── fix-rls.sql          # SQL script to fix Row Level Security policies
-├── project-analysis.html    # Analysis of booking distribution patterns
-├── PROJECT_SAVED.md         # Project save point documentation
-└── PROJECT_STATUS.md        # Current project status and TODO items
-```
-
-## 🛠️ Tech Stack
-
-| Technology | Purpose |
-|------------|---------|
-| **React 19** | UI framework |
-| **Vite 8** | Build tool and dev server |
-| **Tailwind CSS 3** | Utility-first styling |
-| **Supabase** | PostgreSQL database + API |
-| **Lucide React** | Icon library |
-| **Neumorphic Design** | Custom CSS design system |
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+ installed
-- A [Supabase](https://supabase.com) account (free tier works)
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/OriyaHimanshu1198/fishing-booking-system.git
-cd fishing-booking-system
-```
-
-### 2. Install dependencies
-```bash
-npm install
-```
-
-### 3. Set up Supabase
-1. Create a new project on [Supabase](https://supabase.com)
-2. Go to **Settings → API** and copy:
-   - **Project URL** (e.g., `https://xyzcompany.supabase.co`)
-   - **Anon/Public Key**
-3. Create the required tables (see [SETUP_GUIDE.md](SETUP_GUIDE.md))
-
-### 4. Configure environment variables
-Create a `.env` file in the root:
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_KEY=your-anon-key
-```
-
-### 5. Run the application
-```bash
-npm run dev
-```
-The app will be available at `http://localhost:5173/`
-
-### 6. Build for production
-```bash
-npm run build
-```
-
-## 📊 Database Schema
-
-### Tables
-
-**sessions**
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| name | text | Season name (e.g., "2026 Season") |
-| year | integer | Season year |
-| start_date | date | Season start date |
-| end_date | date | Season end date |
-| status | text | 'active', 'upcoming', or 'completed' |
-| created_at | timestamp | Creation timestamp |
-| updated_at | timestamp | Last update timestamp |
-
-**bookings**
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| name | text | Guest full name |
-| email | text | Guest email |
-| phone | text | Guest phone |
-| week | integer | Week number (1-13) |
-| days_count | integer | Number of days booked |
-| booking_type | text | 'consecutive' or 'flexible' |
-| beat_allocations | jsonb | Day-to-beat mapping (e.g., `{"0":"Beat 1","1":"Beat 2"}`) |
-| session_id | UUID | References sessions table |
-| created_at | timestamp | Creation timestamp |
-
-## 🎯 Booking Rules
-
-1. **Season Period**: Configurable via admin
-2. **Weekly Schedule**: Monday - Saturday (6 days per week)
-3. **Resources**: 6 total (Beat 1-5 + Loch)
-4. **No Double Booking**: Each beat can only be allocated to one person per day
-5. **Consecutive Day Rule**: Auto-assigns different beat/loch each day
-6. **Flexible Selection**: User chooses available beats per day
-7. **Auto-Disable**: Fully booked days/beats are automatically disabled
-
-## 🎨 Design System
-
-### Neumorphic Design Tokens
-```css
---bg-primary: #e8eef3      /* Main background */
---bg-secondary: #dfe6ed    /* Card backgrounds */
---shadow-light: #ffffff     /* Top-left highlight */
---shadow-dark: #bec8d1      /* Bottom-right shadow */
---accent-teal: #4fd1c5      /* Primary action color */
-```
-
-### Dark Mode
-Toggle between light and dark themes. Preference is saved to `localStorage`.
-
-## 📦 Deployment
-
-### Netlify / Vercel
-1. Push to GitHub
-2. Import project in Netlify/Vercel
-3. Set environment variables
-4. Deploy
-
-### Netlify Deployment
-- Netlify configuration files are in the `.netlify/` directory
-- `netlify.toml` contains build and redirect settings
-- For SPA routing, Netlify is configured to serve `index.html` for all routes
-- Environment variables should be set in Netlify dashboard:
-  - VITE_SUPABASE_URL
-  - VITE_SUPABASE_KEY
-  - EMAIL_SERVICE_CONFIG (if applicable)
-
-### Manual
-```bash
-npm run build
-# Upload the 'dist' folder to your hosting provider
-```
-
-## 🔮 Future Enhancements
-
-- [ ] Guest self-service booking page (no login required)
-- [ ] Email notifications (booking confirmations, reminders)
-- [ ] PDF booking confirmations
-- [ ] Beat availability heatmap
-- [ ] Waitlist for fully booked days
-- [ ] Multi-year analytics
-- [ ] Role-based access control
-- [ ] Mobile PWA support
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
+Designed specifically for Scottish Highland river beats and loch fisheries (Postcode **IV27 4SL**, Sutherland, Scotland), featuring automatic daily rotation, real-time river gauges, interactive vector mapping, and instant angler itinerary dispatches.
 
 ---
 
-Built with ❤️ using React and Vite  
-Fishing Season 2026 🎣
+## 🌟 Key Highlights & Features
+
+### 🗺️ 1. Interactive River Map & Beat Selector
+- **Interactive River Geography**: Visual representation of **Beats 1, 2, 3, 4, 5, and the Loch**.
+- **Angler Pool Insights**: Real-time pool characteristics, water depths, wading safety guidelines, and target fish species (*Atlantic Salmon, Wild Brown Trout, Sea Trout*).
+- **1-Click Beat Selection**: Direct integration between the river map and the reservation wizard.
+
+### 🌤️ 2. Real-Time Meteorological & River Gauge (`IV27 4SL`)
+- **Live Station Telemetry**: Automated live weather and precipitation data from Open-Meteo for postcode **IV27 4SL** (*Sutherland, Scottish Highlands*).
+- **Live River Level & Spate Gauge**: Calculates estimated river height (e.g. `0.85m Optimal`) based on recent catchment rainfall.
+- **Angler Sun Windows**: Precise sunrise and sunset timings for prime dawn & dusk bite windows.
+- **Highland Fly Recommendations**: Dynamic fly recommendations (*Cascade #8, Sunray Shadow, Willie Gunn, Stoat's Tail*).
+
+### ⚡ 3. Fair Cyclic Rotation & Concurrency Guard
+- **Automatic Consecutive Rotation**: Consecutive multi-day bookings automatically rotate beats each morning, ensuring every guest experiences each beat without conflicts.
+- **Concurrency & Double-Booking Guard**: Pre-commit validation and database Row-Level Security (RLS) policies prevent simultaneous slot collisions.
+- **Sticky Trip Summary & Confetti**: Live pricing breakdown with celebratory confetti animation upon successful reservation.
+
+### 📄 4. Digital Fishing Passes & Calendar Sync
+- **High-Res PDF Permit (📥)**: 1-click downloadable Digital Angler Pass with booking references (`BK-xxxxx`), beat schedules, and conservation rules.
+- **Calendar Integration**: 1-click **Add to Google Calendar** and downloadable **Apple / Outlook (`.ics`)** calendar files.
+- **Export CSV**: Full roster and filter export for estate bailiffs and managers.
+
+### 🔐 5. Security Hardening & Session Persistence
+- **PostgreSQL Row Level Security (RLS)**: Strict access control ensuring public users cannot tamper with admin records.
+- **Brevo API Sanitization**: Secure HTML entity escaping prevents script injection in transactional emails.
+- **Admin Session Persistence**: Persistent authentication state across page reloads with quick demo credentials (`admin` / `admin`).
+- **Flexible Search**: Instant lookup by Booking ID (`BK-00001` or raw `#1`), guest name, email, or phone.
+
+---
+
+## 🏗️ Architecture & Tech Stack
+
+```mermaid
+graph TD
+    A[Angler / Public Portal] -->|Book Rods / Lookup| B[React 19 Frontend + Vite 8]
+    C[Estate Admin Portal] -->|Manage Seasons & Beats| B
+    B -->|PostgreSQL CRUD + RLS| D[Supabase Database]
+    B -->|Live Weather Telemetry| E[Open-Meteo UK Station IV27 4SL]
+    B -->|Transactional Itineraries| F[Brevo SMTP / REST API]
+    B -->|PDF Generation| G[jsPDF Engine]
+    B -->|Calendar Sync| H[Google Calendar & iCal .ics]
+```
+
+| Layer | Technology |
+|---|---|
+| **Frontend Framework** | React 19 + Vite 8 |
+| **Styling & Aesthetics** | Nordic Clean Design System (Emerald `#059669` + Tailwind CSS) |
+| **Icons** | Lucide React |
+| **Database & Auth** | Supabase (PostgreSQL + RLS Policies) |
+| **Email Service** | Brevo (Sendinblue) Transactional API + Node Proxy Fallback |
+| **PDF Generation** | jsPDF Engine |
+| **Live Telemetry** | Open-Meteo Free API (Postcode IV27 4SL, Lat: 58.4634, Lon: -4.8466) |
+
+---
+
+## 📁 Project Directory Structure
+
+```
+fishing-booking-system/
+├── src/
+│   ├── assets/               # High-res fishery imagery
+│   ├── components/
+│   │   ├── BookingForm.jsx   # Booking wizard with live trip summary
+│   │   ├── Dashboard.jsx     # Bailiff operations dashboard & KPI metrics
+│   │   ├── LoginForm.jsx     # Glassmorphic admin authentication
+│   │   ├── RiverMap.jsx      # Interactive SVG river & beat map
+│   │   ├── SessionSelector.jsx# Season switcher & creation drawer
+│   │   ├── UserPortal.jsx    # Public angler landing portal & lookup
+│   │   ├── ViewBookings.jsx  # All bookings with multi-filter & PDF/CSV export
+│   │   ├── WeatherWidget.jsx # Real-time IV27 4SL weather & spate gauge
+│   │   └── WeeklyView.jsx    # 6-day Mon-Sat roster schedule
+│   ├── utils/
+│   │   ├── calendarHelper.js # Google Calendar & .ics export helper
+│   │   ├── dateHelpers.js    # Cyclic rotation and beat allocation algorithm
+│   │   └── emailService.js   # Brevo API transactional email dispatcher
+│   ├── App.jsx               # Application root, auth & view state
+│   ├── App.css               # Nordic Clean tokens, glassmorphism & responsive styles
+│   └── index.css             # Base fonts & Tailwind directives
+├── database/
+│   └── security_hardening_rls.sql # Supabase Row-Level Security migration
+├── server/
+│   └── proxy.js              # Optional Brevo Bearer authenticated proxy server
+├── .env.example              # Environment variables template
+└── package.json
+```
+
+---
+
+## 🚀 Quick Start Guide
+
+### 1. Clone & Install Dependencies
+```bash
+git clone https://github.com/OriyaHimanshu1198/fishing-booking-system.git
+cd fishing-booking-system
+npm install
+```
+
+### 2. Configure Environment Variables
+Create a `.env` file in the root directory (refer to `.env.example`):
+
+```env
+# Supabase PostgreSQL Database
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_KEY=your-supabase-anon-key
+
+# Brevo (Sendinblue) Transactional Email
+VITE_BREVO_API_KEY=xkeysib-your-brevo-api-key
+VITE_BREVO_SENDER_EMAIL=your-verified-sender@example.com
+VITE_BREVO_SENDER_NAME="River & Loch Fishery"
+```
+
+### 3. Database & RLS Setup
+Execute the SQL script in [`database/security_hardening_rls.sql`](database/security_hardening_rls.sql) in your **Supabase SQL Editor** to create the tables and activate Row Level Security:
+
+```sql
+-- Creates 'sessions' and 'bookings' tables with conflict guards
+-- Enables RLS policies for public booking submissions and admin operations
+```
+
+### 4. Run Development Server
+```bash
+npm run dev
+```
+Open **`http://localhost:3000/`** (or **`http://localhost:3001/`** if port 3000 is occupied).
+
+### 5. Build for Production
+```bash
+npm run build
+```
+
+---
+
+## 🎣 Booking Rules & Allocation Logic
+
+1. **Operating Days**: Monday through Saturday (6 fishing days per week; Sunday reserved for conservation).
+2. **Beat Capacity**: Exactly 1 angler rod per beat per day across 6 designated water stretches (Beats 1–5 + Loch).
+3. **Fair Rotation Algorithm**: Consecutive 6-day guests automatically shift forward 1 beat each morning:
+   $$\text{Beat}(d) = \text{BEATS}[(startBeatIndex + d) \bmod 6]$$
+4. **Instant Confirmation**: Anglers receive an immediate HTML itinerary email + downloadable `.ics` calendar invite upon booking.
+
+---
+
+## 🔒 Security Best Practices Implemented
+
+* ✅ **Input Sanitization**: HTML entity escaping (`_escapeHtml`) on all user-supplied names, emails, and notes.
+* ✅ **Database Row-Level Security**: 4 active Supabase RLS policies enforce insert, update, and read boundaries.
+* ✅ **Zero-Vulnerability Proxy**: Optional server proxy guarded by Bearer token authentication and strict CORS origins.
+
+---
+
+## 📄 License
+This project is licensed under the **MIT License** — free to use and customize for private and commercial fisheries.

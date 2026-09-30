@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { Printer } from 'lucide-react'
+import { Download, FileSpreadsheet } from 'lucide-react'
 import { getWeeksInSession, BEATS, formatDate, getBeatForDay } from '../utils/dateHelpers'
+import WeatherWidget from './WeatherWidget'
+import jsPDF from 'jspdf'
 
 // Color palette for bookings - each booking gets a unique color
 const BOOKING_COLORS = [
@@ -30,15 +32,66 @@ function WeeklyView({ bookings, sessionStart, sessionEnd }) {
     )
   }
 
-  const handlePrint = () => {
-    window.print()
+  const handleDownloadSchedulePdf = () => {
+    if (!currentWeek) return
+    try {
+      const doc = new jsPDF()
+      doc.setFontSize(18)
+      doc.setTextColor(5, 150, 105)
+      doc.text(`Fishing Schedule — Week ${currentWeek.weekNumber}`, 14, 20)
+
+      doc.setFontSize(10)
+      doc.setTextColor(100)
+      doc.text(`Dates: ${formatDate(currentWeek.startDate)} — ${formatDate(currentWeek.endDate)}`, 14, 28)
+      doc.text(`Exported: ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`, 14, 34)
+
+      doc.setDrawColor(200)
+      doc.line(14, 38, 196, 38)
+
+      let y = 48
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+      BEATS.forEach((beat) => {
+        if (y > 260) {
+          doc.addPage()
+          y = 20
+        }
+
+        doc.setFontSize(12)
+        doc.setTextColor(30, 41, 59)
+        doc.setFont('helvetica', 'bold')
+        doc.text(beat, 14, y)
+        y += 6
+
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'normal')
+
+        currentWeek.days.forEach((day, dayIdx) => {
+          const slotBookings = getBookingsForSlot(currentWeek.weekNumber, dayIdx, beat)
+          const anglerNames = slotBookings.map(b => `${b.name} (${b.phone || 'No phone'})`).join(', ') || 'Available / Open'
+
+          doc.setTextColor(100)
+          doc.text(`${dayNames[dayIdx]} (${formatDate(day)}):`, 20, y)
+
+          doc.setTextColor(slotBookings.length > 0 ? 15 : 140)
+          doc.text(anglerNames, 70, y)
+          y += 6
+        })
+
+        y += 4
+      })
+
+      doc.save(`Fishing-Roster-Week-${currentWeek.weekNumber}.pdf`)
+    } catch (err) {
+      console.error('Schedule PDF export failed:', err)
+    }
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }} className="print:space-y-2">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
 
       {/* Week Selector */}
-      <div className="neu-section print:hidden animate-fade-in">
+      <div className="neu-section animate-fade-in">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
           <h2 className="neu-section-title">
             <span style={{ fontSize: '1.15rem' }}>📅 Weekly View (Monday — Saturday)</span>
@@ -58,32 +111,23 @@ function WeeklyView({ bookings, sessionStart, sessionEnd }) {
               ))}
             </select>
             <button
-              onClick={handlePrint}
-              className="neu-btn neu-btn-success"
+              onClick={handleDownloadSchedulePdf}
+              className="neu-btn neu-btn-primary flex items-center gap-1.5"
+              title="Download Week Schedule as PDF"
             >
-              <Printer size={16} />
-              Print
+              <Download size={16} />
+              Download Schedule PDF
             </button>
           </div>
         </div>
       </div>
 
-      {/* Print Header */}
-      <div className="hidden print:block" style={{ padding: '12px', textAlign: 'center', background: 'var(--card-bg)', borderRadius: '12px', marginBottom: '8px' }}>
-        <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '8px' }}>
-          Fishing Booking System — Weekly Schedule
-        </h1>
-        {currentWeek && (
-          <div>
-            <p style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-dark)' }}>
-              Week {currentWeek.weekNumber}: {formatDate(currentWeek.startDate)} — {formatDate(currentWeek.endDate)}
-            </p>
-            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Season: {new Date(sessionStart).toLocaleDateString()} — {new Date(sessionEnd).toLocaleDateString()}
-            </p>
-          </div>
-        )}
-        <div style={{ borderTop: '2px solid var(--bg-inset)', marginTop: '10px' }}></div>
+      {/* Live River & Weather Conditions */}
+      <div className="animate-fade-in">
+        <WeatherWidget
+          currentWeek={currentWeek}
+          sessionName={currentWeek ? `Week ${currentWeek.weekNumber} (${formatDate(currentWeek.startDate)} — ${formatDate(currentWeek.endDate)})` : ''}
+        />
       </div>
 
       {/* Booking Grid */}
@@ -227,7 +271,7 @@ function WeeklyView({ bookings, sessionStart, sessionEnd }) {
       )}
 
       {/* Legend */}
-      <div className="neu-section print:hidden animate-fade-in">
+      <div className="neu-section animate-fade-in">
         <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '14px' }}>Legend</h3>
         <div style={{ display: 'flex', gap: '28px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

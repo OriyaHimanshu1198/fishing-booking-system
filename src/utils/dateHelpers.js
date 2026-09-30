@@ -8,6 +8,13 @@ export const getWeeksInSession = (startDate, endDate) => {
   let weekNumber = 1
   let currentStart = new Date(start)
 
+  // Force first week to start on Monday
+  const dayOfWeek = currentStart.getDay() // 0=Sun, 1=Mon
+  if (dayOfWeek !== 1) {
+    const daysBack = (dayOfWeek === 0) ? 6 : dayOfWeek - 1
+    currentStart.setDate(currentStart.getDate() - daysBack)
+  }
+
   while (currentStart <= end) {
     const currentEnd = new Date(currentStart)
     currentEnd.setDate(currentEnd.getDate() + 5) // 6-day week (Monday-Saturday, 0-5 days added)
@@ -23,7 +30,7 @@ export const getWeeksInSession = (startDate, endDate) => {
     })
 
     weekNumber++
-    currentStart.setDate(currentStart.getDate() + 6) // Move to next Monday
+    currentStart.setDate(currentStart.getDate() + 7) // Move to next Monday
   }
 
   return weeks
@@ -32,12 +39,11 @@ export const getWeeksInSession = (startDate, endDate) => {
 export const getDaysInWeek = (startDate, endDate) => {
   const days = []
   const current = new Date(startDate)
-
   while (current <= endDate) {
-    days.push(new Date(current))
+    // Skip Sunday — we don't work Sundays
+    if (current.getDay() !== 0) days.push(new Date(current))
     current.setDate(current.getDate() + 1)
   }
-
   return days
 }
 

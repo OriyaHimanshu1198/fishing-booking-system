@@ -6,7 +6,6 @@ import {
   Mail,
   ArrowRight,
   Download,
-  Printer,
   Lock,
   Sun,
   Moon,
@@ -16,8 +15,12 @@ import {
   Check
 } from 'lucide-react'
 import { getWeeksInSession, BEATS, formatDate, getBeatForDay } from '../utils/dateHelpers'
+import { downloadIcsFile, getGoogleCalendarUrl } from '../utils/calendarHelper'
 import BookingForm from './BookingForm'
+import RiverMap from './RiverMap'
+import WeatherWidget from './WeatherWidget'
 import heroImage from '../assets/hero.png'
+import confetti from 'canvas-confetti'
 import jsPDF from 'jspdf'
 
 const BEAT_DESCRIPTIONS = {
@@ -114,9 +117,18 @@ export default function UserPortal({
 
   // Handle booking form submission from user portal
   const handleUserBookingSubmit = async (bookingData) => {
-    await onAddBooking(bookingData)
-    setConfirmedBooking(bookingData)
+    const result = await onAddBooking(bookingData)
+    setConfirmedBooking(result)
     setActiveTab('success')
+    try {
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 }
+      })
+    } catch {
+      // ignore
+    }
   }
 
   // PDF download for booking receipt
@@ -306,6 +318,9 @@ export default function UserPortal({
               </div>
             </div>
 
+            {/* Live Weather & River Conditions */}
+            <WeatherWidget />
+
             {/* Quick Feature Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="neu-flat p-6 rounded-2xl space-y-2">
@@ -339,15 +354,21 @@ export default function UserPortal({
               </div>
             </div>
 
+            {/* Interactive River Map Component */}
+            <RiverMap
+              selectedBeat={selectedBeatInfo}
+              onSelectBeat={(beat) => setSelectedBeatInfo(beat)}
+            />
+
             {/* Beat Directory Interactive Guide */}
             <div className="neu-raised rounded-3xl p-6 sm:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4 border-slate-200 dark:border-slate-700">
                 <div>
                   <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-                    The Fishery Beats & Loch Guide
+                    The Fishery Beats & Loch Details
                   </h3>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Click any beat to view water details, depths, and wading conditions.
+                    Click any beat on the map or select below to view depths, flies, and wading notes.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -449,7 +470,7 @@ export default function UserPortal({
               </div>
 
               {/* Week Calendar Grid */}
-              {currentWeek && (
+              {currentWeek ? (
                 <div className="overflow-x-auto rounded-2xl neu-inset p-4">
                   <table className="w-full text-left border-collapse min-w-[700px]">
                     <thead>
@@ -474,7 +495,7 @@ export default function UserPortal({
                             {beat}
                           </td>
                           {currentWeek.days.map((_, dayIdx) => {
-                            const isBooked = bookings.some(
+                            const isBooked = (allBookings || bookings).some(
                               (b) => b.week === currentWeek.weekNumber && getBeatForDay(b, dayIdx) === beat
                             )
 
@@ -497,6 +518,11 @@ export default function UserPortal({
                       ))}
                     </tbody>
                   </table>
+                </div>
+              ) : (
+                <div className="neu-inset rounded-2xl p-6 text-center text-sm text-slate-500">
+                  <p style={{ fontWeight: 700, marginBottom: 8 }}>No week selected</p>
+                  <p>Select a week above to view beat availability.</p>
                 </div>
               )}
 
@@ -608,29 +634,41 @@ export default function UserPortal({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap gap-4 justify-center pt-2">
+              <div className="flex flex-wrap gap-3 justify-center pt-3">
                 <button
                   onClick={() => downloadReceiptPdf(confirmedBooking)}
                   className="neu-btn neu-btn-primary px-5 py-2.5 flex items-center gap-2 text-sm font-semibold"
                 >
                   <Download size={16} />
-                  Download PDF Receipt
+                  Download PDF Pass
                 </button>
 
                 <button
-                  onClick={() => window.print()}
-                  className="neu-btn neu-btn-ghost px-5 py-2.5 flex items-center gap-2 text-sm"
+                  onClick={() => downloadIcsFile(confirmedBooking, currentWeek)}
+                  className="neu-btn neu-btn-ghost px-4 py-2.5 flex items-center gap-2 text-xs font-semibold"
+                  title="Download iCal file for Apple Calendar / Outlook"
                 >
-                  <Printer size={16} />
-                  Print
+                  <Calendar size={15} />
+                  Apple / Outlook (.ics)
                 </button>
+
+                <a
+                  href={getGoogleCalendarUrl(confirmedBooking, currentWeek)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="neu-btn neu-btn-ghost px-4 py-2.5 flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                  title="Add directly to Google Calendar"
+                >
+                  <Sparkles size={15} />
+                  Add to Google Calendar
+                </a>
 
                 <button
                   onClick={() => {
                     setConfirmedBooking(null)
                     setActiveTab('overview')
                   }}
-                  className="neu-btn neu-btn-ghost px-5 py-2.5 text-sm"
+                  className="neu-btn neu-btn-ghost px-4 py-2.5 text-xs text-slate-500"
                 >
                   Return to Home
                 </button>
@@ -696,13 +734,35 @@ export default function UserPortal({
                                 Guest: {b.name} · Ref: {b.id}
                               </div>
                             </div>
-                            <button
-                              onClick={() => downloadReceiptPdf(b)}
-                              className="neu-btn neu-btn-ghost px-3 py-1.5 text-xs flex items-center gap-1.5"
-                            >
-                              <Download size={14} />
-                              Download PDF
-                            </button>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                onClick={() => downloadReceiptPdf(b)}
+                                className="neu-btn neu-btn-primary px-3 py-1.5 text-xs flex items-center gap-1.5 font-semibold"
+                              >
+                                <Download size={14} />
+                                PDF Pass
+                              </button>
+
+                              <button
+                                onClick={() => downloadIcsFile(b, weeks.find(w => w.weekNumber === b.week) || currentWeek)}
+                                className="neu-btn neu-btn-ghost px-2.5 py-1.5 text-xs flex items-center gap-1"
+                                title="Download Apple / Outlook (.ics) Calendar"
+                              >
+                                <Calendar size={13} />
+                                .ics
+                              </button>
+
+                              <a
+                                href={getGoogleCalendarUrl(b, weeks.find(w => w.weekNumber === b.week) || currentWeek)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="neu-btn neu-btn-ghost px-2.5 py-1.5 text-xs flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium"
+                                title="Add to Google Calendar"
+                              >
+                                <Sparkles size={13} />
+                                Google Cal
+                              </a>
+                            </div>
                           </div>
 
                           {/* Beat Allocation Chips */}
@@ -738,7 +798,7 @@ export default function UserPortal({
       </main>
 
       {/* Public Footer */}
-      <footer className="mt-16 text-center text-xs text-slate-500 dark:text-slate-400 space-y-2">
+      <footer className="mt-16 pb-20 sm:pb-8 text-center text-xs text-slate-500 dark:text-slate-400 space-y-2">
         <p>© {new Date().getFullYear()} River & Loch Angling · Scottish Salmon & Trout Booking System</p>
         <p className="flex items-center justify-center gap-2">
           <span>Fishery Rules & Safety</span>
@@ -753,6 +813,44 @@ export default function UserPortal({
           </button>
         </p>
       </footer>
+
+      {/* Mobile Floating Bottom Bar */}
+      <div className="sm:hidden fixed bottom-3 left-3 right-3 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl p-2 shadow-2xl border border-slate-200/80 dark:border-slate-800 flex justify-around items-center text-xs font-semibold">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`flex flex-col items-center gap-1 p-1.5 rounded-xl transition-colors ${
+            activeTab === 'overview' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'
+          }`}
+        >
+          <Compass size={18} />
+          <span className="text-[10px]">Beats</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('availability')}
+          className={`flex flex-col items-center gap-1 p-1.5 rounded-xl transition-colors ${
+            activeTab === 'availability' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'
+          }`}
+        >
+          <Calendar size={18} />
+          <span className="text-[10px]">Calendar</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('book')}
+          className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 text-white shadow-md font-bold"
+        >
+          <Sparkles size={18} />
+          <span className="text-[10px]">Book Now</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('lookup')}
+          className={`flex flex-col items-center gap-1 p-1.5 rounded-xl transition-colors ${
+            activeTab === 'lookup' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'
+          }`}
+        >
+          <Search size={18} />
+          <span className="text-[10px]">Lookup</span>
+        </button>
+      </div>
     </div>
   )
 }

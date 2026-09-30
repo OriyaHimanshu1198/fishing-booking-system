@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
+const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || ''
 
 // Session management constants
 export const SESSION_TABLE = 'sessions'
@@ -64,7 +64,6 @@ const getDefaultTableData = (table) => {
           4: 'Beat 5',
           5: 'Loch'
         },
-        booking_ref: "BK-101",
         created_at: new Date('2026-03-01T08:00:00Z').toISOString()
       },
       {
@@ -82,7 +81,6 @@ const getDefaultTableData = (table) => {
           2: 'Beat 4',
           4: 'Loch'
         },
-        booking_ref: "BK-101",
         created_at: new Date('2026-03-02T09:30:00Z').toISOString()
       },
       {
@@ -101,7 +99,6 @@ const getDefaultTableData = (table) => {
           2: 'Beat 3',
           3: 'Beat 4'
         },
-        booking_ref: "BK-101",
         created_at: new Date('2026-03-05T14:15:00Z').toISOString()
       }
     ]
