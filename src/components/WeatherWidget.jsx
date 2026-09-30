@@ -98,7 +98,7 @@ export default function WeatherWidget({ currentWeek, sessionName }) {
   const riverStatusColor = todayRain > 8 ? 'text-amber-400' : 'text-emerald-400'
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-3xl p-5 sm:p-6 border border-slate-700/80 shadow-2xl overflow-hidden relative">
+    <div className="weather-widget-container bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-3xl p-5 sm:p-6 border border-slate-700/80 shadow-2xl overflow-hidden relative">
       {/* Background ambient glow */}
       <div className="absolute -top-12 -right-12 w-48 h-48 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -118,10 +118,10 @@ export default function WeatherWidget({ currentWeek, sessionName }) {
                 ● Live API
               </span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-slate-300 mt-0.5">
+            <div className="flex items-center gap-2 text-xs text-slate-200 mt-0.5">
               <MapPin size={13} className="text-rose-400" />
-              <span className="font-semibold">{LOCATION.postcode}</span>
-              <span className="text-slate-400">· {LOCATION.name}</span>
+              <span className="font-semibold text-white">{LOCATION.postcode}</span>
+              <span className="text-slate-300">· {LOCATION.name}</span>
             </div>
           </div>
         </div>
@@ -132,7 +132,7 @@ export default function WeatherWidget({ currentWeek, sessionName }) {
             <button
               onClick={() => setActiveTab('current')}
               className={`px-3 py-1 rounded-lg transition-all ${
-                activeTab === 'current' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                activeTab === 'current' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-300 hover:text-white'
               }`}
             >
               Current
@@ -140,7 +140,7 @@ export default function WeatherWidget({ currentWeek, sessionName }) {
             <button
               onClick={() => setActiveTab('forecast')}
               className={`px-3 py-1 rounded-lg transition-all ${
-                activeTab === 'forecast' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                activeTab === 'forecast' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-300 hover:text-white'
               }`}
             >
               3-Day Forecast
@@ -150,7 +150,7 @@ export default function WeatherWidget({ currentWeek, sessionName }) {
           <button
             onClick={fetchWeather}
             disabled={loading}
-            className="p-2 bg-slate-800/80 hover:bg-slate-700 rounded-xl text-slate-300 hover:text-white transition-all border border-slate-700"
+            className="p-2 bg-slate-800/80 hover:bg-slate-700 rounded-xl text-slate-200 hover:text-white transition-all border border-slate-700"
             title="Refresh Live Weather"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -163,15 +163,15 @@ export default function WeatherWidget({ currentWeek, sessionName }) {
           {/* Main Gauges Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {/* Water Height */}
-            <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800 shadow-inner">
-              <div className="flex items-center justify-between text-slate-400 text-xs mb-1.5">
+            <div className="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 shadow-inner">
+              <div className="flex items-center justify-between text-slate-300 text-xs mb-1.5 font-semibold">
                 <span className="flex items-center gap-1.5">
                   <Droplets className="w-3.5 h-3.5 text-cyan-400" />
                   River Gauge
                 </span>
               </div>
               <div className="text-xl font-extrabold text-white font-mono">
-                {riverHeight} <span className="text-xs font-normal text-slate-400">m</span>
+                {riverHeight} <span className="text-xs font-normal text-slate-300">m</span>
               </div>
               <div className={`text-[11px] font-bold mt-1 ${riverStatusColor}`}>
                 ● {riverStatus}
@@ -179,8 +179,8 @@ export default function WeatherWidget({ currentWeek, sessionName }) {
             </div>
 
             {/* Temperature & Condition */}
-            <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800 shadow-inner">
-              <div className="flex items-center justify-between text-slate-400 text-xs mb-1.5">
+            <div className="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 shadow-inner">
+              <div className="flex items-center justify-between text-slate-300 text-xs mb-1.5 font-semibold">
                 <span className="flex items-center gap-1.5">
                   <Thermometer className="w-3.5 h-3.5 text-amber-400" />
                   Air Temp
@@ -188,23 +188,23 @@ export default function WeatherWidget({ currentWeek, sessionName }) {
                 <WeatherIcon className={`w-4 h-4 ${weatherInfo.color}`} />
               </div>
               <div className="text-xl font-extrabold text-white font-mono">
-                {temp}°C <span className="text-xs font-normal text-slate-400">({feelsLike}°C feels)</span>
+                {temp}°C <span className="text-xs font-normal text-slate-300">({feelsLike}°C feels)</span>
               </div>
-              <div className="text-[11px] font-semibold text-slate-300 mt-1 truncate">
+              <div className="text-[11px] font-semibold text-slate-200 mt-1 truncate">
                 {weatherInfo.label}
               </div>
             </div>
 
             {/* Wind & Surface */}
-            <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800 shadow-inner">
-              <div className="flex items-center justify-between text-slate-400 text-xs mb-1.5">
+            <div className="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 shadow-inner">
+              <div className="flex items-center justify-between text-slate-300 text-xs mb-1.5 font-semibold">
                 <span className="flex items-center gap-1.5">
                   <Wind className="w-3.5 h-3.5 text-teal-400" />
                   Highland Wind
                 </span>
               </div>
               <div className="text-xl font-extrabold text-white font-mono">
-                {windMph} <span className="text-xs font-normal text-slate-400">mph</span> <span className="text-emerald-400">{windDir}</span>
+                {windMph} <span className="text-xs font-normal text-slate-300">mph</span> <span className="text-emerald-400">{windDir}</span>
               </div>
               <div className="text-[11px] font-semibold text-cyan-300 mt-1">
                 {windMph > 18 ? 'Heavy ripple / Drift' : 'Good casting ripple'}
@@ -212,8 +212,8 @@ export default function WeatherWidget({ currentWeek, sessionName }) {
             </div>
 
             {/* Light / Bite Windows */}
-            <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800 shadow-inner">
-              <div className="flex items-center justify-between text-slate-400 text-xs mb-1.5">
+            <div className="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 shadow-inner">
+              <div className="flex items-center justify-between text-slate-300 text-xs mb-1.5 font-semibold">
                 <span className="flex items-center gap-1.5">
                   <Sun className="w-3.5 h-3.5 text-yellow-400" />
                   Sun Windows
@@ -229,17 +229,17 @@ export default function WeatherWidget({ currentWeek, sessionName }) {
           </div>
 
           {/* Condition Insights & Tackle Advice */}
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
+          <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold whitespace-nowrap">
                 🎣 Sutherland Beat Tips
               </span>
-              <span className="text-slate-300 font-medium">
+              <span className="text-slate-200 font-medium">
                 {weatherInfo.condition} · Recommend <strong>Cascade #8</strong>, <strong>Sunray Shadow</strong>, and <strong>Willie Gunn</strong>.
               </span>
             </div>
 
-            <div className="text-[11px] text-slate-400 flex items-center gap-2">
+            <div className="text-[11px] text-slate-300 flex items-center gap-2">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
               <span>Catch & Release on wild salmon & sea trout in effect</span>
             </div>

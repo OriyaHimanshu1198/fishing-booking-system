@@ -865,4 +865,82 @@ body {
   color: #f87171 !important;
 }
 
+/* ==========================================================
+   HIGHLAND RIVER & WEATHER LIVE GAUGE - CRISP WHITE TEXT ON WHITE/DARK SCREENS
+   ========================================================== */
+
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container,
+.weather-widget-container {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e1b4b 100%) !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container h1,
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container h2,
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container h3,
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container h4,
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container h5,
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container h6,
+.weather-widget-container h1,
+.weather-widget-container h2,
+.weather-widget-container h3,
+.weather-widget-container h4,
+.weather-widget-container h5,
+.weather-widget-container h6 {
+  color: #ffffff !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container p,
+.weather-widget-container p {
+  color: #e2e8f0 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container .text-white,
+.weather-widget-container .text-white {
+  color: #ffffff !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container .text-slate-100,
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container .text-slate-200,
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container .text-slate-300,
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container .text-slate-400,
+.weather-widget-container .text-slate-100,
+.weather-widget-container .text-slate-200,
+.weather-widget-container .text-slate-300,
+.weather-widget-container .text-slate-400 {
+  color: #cbd5e1 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container .text-emerald-300,
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container .text-emerald-400,
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container .text-emerald-500,
+.weather-widget-container .text-emerald-300,
+.weather-widget-container .text-emerald-400,
+.weather-widget-container .text-emerald-500 {
+  color: #34d399 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container .text-cyan-300,
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container .text-cyan-400,
+.weather-widget-container .text-cyan-300,
+.weather-widget-container .text-cyan-400 {
+  color: #67e8f9 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container .text-amber-400,
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container .text-yellow-400,
+.weather-widget-container .text-amber-400,
+.weather-widget-container .text-yellow-400 {
+  color: #fbbf24 !important;
+}
+
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container .text-rose-300,
+:root:not(.dark):not([data-theme="dark"]) .weather-widget-container .text-rose-400,
+.weather-widget-container .text-rose-300,
+.weather-widget-container .text-rose-400 {
+  color: #f87171 !important;
+}
+
+
 
